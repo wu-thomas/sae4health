@@ -52,7 +52,7 @@ load_server_data <- function(CountryInfo, session) {
     
     Sys.sleep(1)
     
-    recode.path <- paste0(golem::get_golem_options()$server_link, '/',
+    recode.path <- paste0(golem::get_golem_options()$server_link, '/DHS_survey_dat/',
                           country_code, '/DHS_', svy_year, '/',
                           required_recode[i], '.rds')
     
@@ -87,7 +87,7 @@ load_server_data <- function(CountryInfo, session) {
     session$sendCustomMessage('controlSpinner', list(action = "show",
                                                      message = paste0('Loading Geographic Data. Please wait...')))
     
-    GPS.path <- paste0(golem::get_golem_options()$server_link, '/',
+    GPS.path <- paste0(golem::get_golem_options()$server_link, '/DHS_survey_dat/',
                        country_code, '/DHS_', svy_year, '/',
                        'Geographic_Data.rds')
     
