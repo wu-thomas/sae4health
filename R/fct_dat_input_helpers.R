@@ -9,6 +9,8 @@
 ###  Given a country, find the available surveys (years)
 ###############################################################
 
+ref_tab_all <- surveyPrev::indicatorList
+
 get_survey_year <- function(country=NULL){
 
   if(is.null(country)){return(NULL)}

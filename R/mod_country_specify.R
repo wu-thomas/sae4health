@@ -11,7 +11,7 @@
 
 
 #surveyPrev_ind_list <-  ref_tab_all # surveyPrev::surveyPrevIndicators
-#surveyPrev_ind_list <- surveyPrev::surveyPrevIndicators
+#surveyPrev_ind_list <- surveyPrev::surveyPrecovIndicators
 
 #indicator_choices_vector <- stats::setNames(surveyPrev_ind_list$ID, surveyPrev_ind_list$Description)
 #load(file='data/DHS_meta_preload_04172024.rda')
@@ -144,9 +144,9 @@ mod_country_specify_ui <- function(id){
 mod_country_specify_server <- function(id,CountryInfo,AnalysisInfo,parent_session){
   moduleServer( id, function(input, output, session){
 
-
     ns <- session$ns
-
+    ref_tab_all <- surveyPrev::indicatorList
+    
     observeEvent(input$switch_bar, {
       message('switching')
       shinydashboard::updateTabItems(parent_session, "Overall_tabs", selected = "data_upload")
@@ -426,7 +426,8 @@ mod_country_specify_server <- function(id,CountryInfo,AnalysisInfo,parent_sessio
 
 
       ### Internal version, all countries
-      if(!CountryInfo$WHO_version()){
+      if(!CountryInfo$WHO_version() && exists("DHS.country.meta")){
+        message("DHS.country.meta exists")
         country_name_list <- sort(DHS.country.meta[['CountryName']])
         updateSelectInput(inputId = "country", choices = c('',country_name_list))
       }

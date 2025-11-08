@@ -1,0 +1,323 @@
+---
+title: "download_selected_DHS_as_rds"
+output: html_document
+---
+
+In this vignette, we will describe how to load the newest version of the DHS survey data and meta data to local.
+
+# Package download
+
+```{r}
+install.packages("rdhs")
+install.packages("fs")
+install.packages("stringr")
+install.packages("purr")
+library(rdhs)
+library(dplyr)
+library(fs)
+library(stringr)
+library(purrr)
+```
+
+
+# Login Preperation
+
+To acess DHS data after creating an account and requesting for access of data, set the dhs config to account's email and project name, and enter password when asked.
+
+```{r}
+set_rdhs_config(email = "[your user email]",
+               project = "[your project name]",
+               global = FALSE)
+```
+
+# Set download directory
+
+Change to the base directory you hope to save the data to
+
+```{r}
+base_dir <- "/Users/jonno/Dropbox/YunhanJon"
+meta_dir <- paste0(base_dir, "/DHS_survey_dat/DHS_meta_data")
+data_dir <- paste0(base_dir, "/DHS_survey_dat")
+```
+
+# Download meta data
+
+First, download meta data of DHS data, including information on country, existing survey, and data. These meta data will be saved as a rds file called *DHS_meta_preload.rds* in the meta_dir specified in previous steps.
+
+```{r}
+###############################################################
+### prepare preloaded DHS meta data
+###############################################################
+
+### load dhs meta data
+DHS.country.listing <- rdhs::dhs_countries()
+DHS.survey.listing <- rdhs::dhs_surveys()
+DHS.dataset.listing <- rdhs::dhs_datasets()
+## get indicator list
+ref_tab_all <- surveyPrev::indicatorList
+
+##################################################
+### Determine the surveys eligible for analysis
+##################################################
+### criteria: conducted later than 2000; is DHS standard survey (not MIS etc.); contains GPS data
+
+### subset to >2000 and standard DHS
+DHS.survey.listing <- rdhs::dhs_surveys()
+DHS.survey.listing <- DHS.survey.listing[as.numeric(DHS.survey.listing$SurveyYear)>2000 & DHS.survey.listing$SurveyType== 'DHS',]
+
+### check GPS data set availability
+check_GPS_avail <- function(surveyID){
+  svy.tmp.list <- DHS.dataset.listing[DHS.dataset.listing$SurveyId==surveyID,]
+  return( ('Geographic Data' %in% unique(svy.tmp.list$FileType)))
+}
+
+### subset to surveys with GPS
+DHS.survey.listing$GPS_avail <-  sapply(DHS.survey.listing$SurveyId,check_GPS_avail)
+DHS.survey.listing <- DHS.survey.listing[DHS.survey.listing$GPS_avail==T,]
+
+DHS.survey.meta.preload <- DHS.survey.listing
+
+##################################################
+### Determine data sets according to surveys
+##################################################
+
+DHS.dataset.meta.preload <- DHS.dataset.listing[DHS.dataset.listing$SurveyId %in%
+                                                  unique(DHS.survey.meta.preload$SurveyId),]
+DHS.country.meta.preload <- DHS.country.listing[DHS.country.listing$CountryName %in%
+                                                  unique(DHS.survey.meta.preload$CountryName),]
+
+
+### post process
+DHS.country.meta <- DHS.country.meta.preload
+DHS.country.meta[DHS.country.meta$CountryName=='Tanzania',]$CountryName <-'United Republic of Tanzania'
+DHS.country.meta[DHS.country.meta$CountryName=='Congo Democratic Republic',]$CountryName <-'Democratic Republic of the Congo'
+
+
+DHS.survey.meta <- DHS.survey.meta.preload
+DHS.survey.meta[DHS.survey.meta$CountryName=='Tanzania',]$CountryName <-'United Republic of Tanzania'
+DHS.survey.meta[DHS.survey.meta$CountryName=='Congo Democratic Republic',]$CountryName <-'Democratic Republic of the Congo'
+
+DHS.dataset.meta <- DHS.dataset.meta.preload
+DHS.dataset.meta[DHS.dataset.meta$CountryName=='Tanzania',]$CountryName <-'United Republic of Tanzania'
+DHS.dataset.meta[DHS.dataset.meta$CountryName=='Congo Democratic Republic',]$CountryName <-'Democratic Republic of the Congo'
+
+saveRDS(
+  list(
+    DHS.country.meta = DHS.country.meta,
+    DHS.survey.meta  = DHS.survey.meta,
+    DHS.dataset.meta = DHS.dataset.meta
+  ),
+  file = paste0(meta_dir, "/DHS_meta_preload.rds")
+)
+```
+
+# Download DHS Estimates
+
+One other meta data needed for the DHS app to function is the DHS official estimates on indicators, used to compare to our model's estimate. These estimates can be pulled from the dhs api by running the code below
+
+```{r}
+#######################################################################
+###  prepare DHS estimates for all surveys for supported indicators
+#######################################################################
+
+#dhs_survey_list <- rdhs::dhs_surveys()
+dhs_survey_list <- DHS.survey.meta
+dhs_survey_list <- dhs_survey_list[dhs_survey_list$SurveyYear>2000 & dhs_survey_list$SurveyType== 'DHS',]
+ref
+load("data/indicator_list_all.rda")
+
+file_path <- file.path(meta_dir, "DHS_api_est.rds")
+if (file.exists(file_path)) {
+  DHS_api_est_current <- readRDS(file_path)
+}
+
+diff_in_survey <- data.frame()
+
+if(!exists("diff_in_survey")){
+  diff_in_survey <- dhs_survey_list
+} else {
+  DHS_up_to_date_survey <- dhs_survey_list %>%
+    rename(CountryCode = DHS_CountryCode,
+           SurveyYear = SurveyYear) %>%
+    mutate(SurveyYear = as.integer(SurveyYear))
+  
+  current_survey <- DHS_api_est_current %>%
+    rename(CountryCode = `Country Code`,
+           SurveyYear = `Survey Year`) %>%
+    mutate(SurveyYear = as.integer(SurveyYear))
+  
+  diff_in_survey <- anti_join(DHS_up_to_date_survey, current_survey,
+                       by = c("CountryCode", "SurveyYear"))
+}
+
+
+res_ind_supported <- data.frame()
+
+if(dim(diff_in_survey)[1] > 0){
+  for (i in 1:dim(diff_in_survey)[1]){
+    tmp_cty_code <- diff_in_survey$CountryCode[i]
+    tmp_svy_year <- diff_in_survey$SurveyYear[i]
+    
+    tmp_call <- paste0("https://api.dhsprogram.com/rest/dhs/data?countryIds=",tmp_cty_code,"&surveyYear=",tmp_svy_year,"&perpage=10000&f=csv")
+    tmp_res <- read.csv(tmp_call)
+  
+    tmp_res <- tmp_res[tmp_res$IndicatorId %in% ref_tab_all$ID,  ]
+    res_ind_supported <- rbind(res_ind_supported,tmp_res)
+  }
+}
+
+
+DHS_api_est <- res_ind_supported[,c('IndicatorId','Indicator','Value','DHS_CountryCode',
+                                    'CountryName','SurveyYear','ByVariableLabel')]
+
+colnames(DHS_api_est) <- c('DHS Standard ID','Definition','Estimate','Country Code','Country','Survey Year','By Variable Label')
+DHS_api_est <- DHS_api_est[,c('Country','Country Code','Survey Year','DHS Standard ID','Definition','Estimate','By Variable Label')]
+DHS_api_est <- rbind(DHS_api_est_current, DHS_api_est)
+saveRDS(DHS_api_est,'C:/Users/lucyx/Desktop/DHS/DHS_meta_data/DHS_api_est.rds')
+```
+
+# Download survey recode data
+
+To download raw survey recode data needed for the DHS app, you will need to first run the function below, requiring country, year, and a directory to save the data to.
+
+```{r}
+#' Download raw data to designated directory
+#'
+#' @description Download raw DHS recode data to load to server
+#'
+#' @param country 2 letter abbreviation code of country name. Have to match to year. Will download all survey data if set to NULL
+#' @param year year of the country to download the data. Have to each match a country. Will download all survey data if set to NULL
+#' @param base_dir the directory to save downloaded recode data
+#'
+#' @example
+#' 
+#' base_dir <- "/Users/"
+#' country <- c("NG","NG","RW")
+#' year <- c("2024", "2018", "2019")
+#' download_selected_data(country=country, year=year, base_dir=base_dir)
+#' #download all existing survey data:
+#' download_selected_data(base_dir=base_dir)
+#' 
+#' @noRd
+download_selected_data <- function(country=NULL, year=NULL, base_dir){
+  DHS.country.meta <- rdhs::dhs_countries()
+  DHS.survey.meta <- rdhs::dhs_surveys()
+  DHS.dataset.meta <- rdhs::dhs_datasets()
+  setwd(base_dir)
+  ##############################################################################
+  #########   load survey meta data
+  ##############################################################################
+
+  recode_list <- c("Births Recode"   ,"Couples' Recode" , "Household Recode",
+                   "Individual Recode" ,"Children's Recode" ,"Men's Recode" , "Household Member Recode",
+                   "HIV Test Results Recode",
+                   "Wealth Index")
+  country_list <- unique(DHS.country.meta$DHS_CountryCode)
+
+  potential_surveys <-  DHS.dataset.meta %>% dplyr::filter(SurveyType == 'DHS' & #
+                                                             DHS_CountryCode %in% country_list & #SurveyYear>1999 &
+                                                             ((FileType %in% recode_list &
+                                                                 FileFormat=='Stata dataset (.dta)') |
+                                                                (FileType == 'Geographic Data')|
+                                                                (FileType == 'Geospatial Covariates')))
+  # Get unique combinations of Country & Survey Year
+  unique_surveys <- potential_surveys %>%
+    select(DHS_CountryCode, SurveyYear) %>%
+    distinct()
+
+  if(!is.null(country) && !is.null(year)) {
+    for (i in 1:length(country)){
+      tmp_unique_surveys <- unique_surveys %>%
+        filter(DHS_CountryCode == country[i]) %>%
+        filter(SurveyYear == year[i])
+    }
+    unique_surveys <- tmp_unique_surveys
+  }
+
+
+  #######################################
+  for (i in seq_len(nrow(unique_surveys))) {
+
+    country <- unique_surveys$DHS_CountryCode[i]
+    survey_year <- unique_surveys$SurveyYear[i]
+
+    # Define paths
+    country_dir <- file.path(base_dir, country)
+    survey_dir <- file.path(country_dir, paste0("DHS_", survey_year))
+
+    # Create directories if they do not exist
+    if (!dir.exists(survey_dir)) {
+      dir.create(survey_dir, recursive = TRUE)
+      message("Created folder: ", survey_dir)
+    }
+
+    # Get all datasets available for this survey
+    survey_datasets <- potential_surveys %>%
+      filter(DHS_CountryCode == country, SurveyYear == survey_year)
+
+    for (j in seq_len(nrow(survey_datasets))) {
+
+      recode_type <- survey_datasets$FileType[j]
+      print(recode_type)
+      file_id <- survey_datasets$FileName[j]
+      recode_rename_map <- c(
+        "Individual Recode" = 'IR',
+        "Household Member Recode" = 'PR',
+        "Children's Recode" = "KR",
+        "Births Recode" = 'BR',
+        "Household Recode" = "HR",
+        "Men's Recode" = "MR",
+        "HIV Test Results Recode" = 'AR',
+        "Couples' Recode" = 'CR'
+      )
+      
+      recode_type <- recode_rename_map[[recode_type]]
+      print
+
+      # Define output file path
+      output_file <- file.path(survey_dir, paste0(gsub(" ", "_", recode_type), ".rds"))
+
+      # Skip if file already exists
+      if (file.exists(output_file)) {
+        message("Skipping existing file: ", output_file)
+        next
+      }
+
+      # Try to download and save the dataset
+      tryCatch({
+        message("Downloading: ", file_id, " (", recode_type, ") for ", country, " - ", survey_year)
+
+        # Download dataset
+        data.paths.tmp <- rdhs::get_datasets(survey_datasets$FileName[j], clear_cache = T)
+
+        dataset <- readRDS(paste0(data.paths.tmp))
+
+        if (!is.data.frame(dataset) || nrow(dataset) <= 1) {
+          stop("Error: download unsuccessful.")
+        }
+
+        # Save as .rds
+        saveRDS(dataset, file = output_file)
+
+        message("Saved: ", output_file)
+
+      }, error = function(e) {
+        message("Error downloading ", file_id, " for ", country, " - ", survey_year, ": ", e$message)
+      })
+    }
+  }
+}
+```
+
+Next, specify the country and year as needed. If you want to download multiple survey data or all available survey data, see example in the function description.
+
+```{r}
+
+country <- c("NG")
+year <- c("2024")
+
+download_selected_data(country=country, year=year, base_dir=data_dir)
+
+```
+
+Now, the recode files should be saved in the specified folder with the structure data_dir/[CountryCode]/DHS_[year]/

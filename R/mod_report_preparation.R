@@ -48,7 +48,8 @@ mod_report_preparation_ui <- function(id){
 mod_report_preparation_server <- function(id,CountryInfo,AnalysisInfo){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
-
+    ref_tab_all <- surveyPrev::indicatorList
+    
     if (!requireNamespace("grid", quietly = TRUE)) {
       stop("Package 'grid' is required for this function. Please install it with install.packages('grid').")
     }

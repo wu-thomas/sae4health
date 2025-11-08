@@ -124,6 +124,7 @@ mod_survey_dat_input_ui <- function(id){
 mod_survey_dat_input_server <- function(id,CountryInfo,AnalysisInfo){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
+    ref_tab_all <- surveyPrev::indicatorList
     
     options(shiny.maxRequestSize=550*1024^2)
     

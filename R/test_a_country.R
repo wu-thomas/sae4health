@@ -2,7 +2,7 @@
 ###############################################################
 ### test Rwanda contraceptive
 ###############################################################
-
+ref_tab_all <- surveyPrev::indicatorList
 if(FALSE){
   reactiveConsole(TRUE)
 

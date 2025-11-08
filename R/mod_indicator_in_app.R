@@ -57,7 +57,7 @@ mod_indicator_in_app_server <- function(id,CountryInfo,AnalysisInfo,parent_sessi
   moduleServer( id, function(input, output, session){
 
     ns <- session$ns
-
+    ref_tab_all <- surveyPrev::indicatorList
 
     ###############################################################
     ### text for selected indicator

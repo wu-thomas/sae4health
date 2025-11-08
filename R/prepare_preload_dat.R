@@ -5,7 +5,7 @@
 ###############################################################
 ### load DHS meta data
 ###############################################################
-
+ref_tab_all <- surveyPrev::indicatorList
 DHS_api_timeout = F
 
 # if(FALSE){
@@ -140,10 +140,20 @@ if(FALSE){
   DHS.dataset.meta <- DHS.dataset.meta.preload
   DHS.dataset.meta[DHS.dataset.meta$CountryName=='Tanzania',]$CountryName <-'United Republic of Tanzania'
   DHS.dataset.meta[DHS.dataset.meta$CountryName=='Congo Democratic Republic',]$CountryName <-'Democratic Republic of the Congo'
-
+  
+  DHS.survey.meta <- DHS.survey.meta %>%
+    filter(SurveyType == "DHS") %>%
+    filter(as.integer(SurveyYear) > 1999)
   formatted_date <- format(Sys.Date(), "%m%d%Y")
 
-  #save(DHS.country.meta,DHS.survey.meta,DHS.dataset.meta,file=paste0('data/DHS_meta_preload_',formatted_date,'.rda'))
+  saveRDS(
+    list(
+      DHS.country.meta = DHS.country.meta,
+      DHS.survey.meta  = DHS.survey.meta,
+      DHS.dataset.meta = DHS.dataset.meta
+    ),
+    file = "C:/Users/lucyx/Desktop/DHS/DHS_meta_data/DHS_meta_preload.rds"
+  )
 
 
 }
@@ -1001,7 +1011,8 @@ if(FALSE){
 
   colnames(DHS_api_est) <- c('DHS Standard ID','Definition','Estimate','Country Code','Country','Survey Year','By Variable Label')
   DHS_api_est <- DHS_api_est[,c('Country','Country Code','Survey Year','DHS Standard ID','Definition','Estimate','By Variable Label')]
-  #save(DHS_api_est,file='data/DHS_api_est.rda')
+  save(DHS_api_est,file='data/new/DHS_api_est.rda')
+  saveRDS(DHS_api_est,'C:/Users/lucyx/Desktop/DHS/DHS_meta_data/DHS_api_est.rds')
 
 
 }

@@ -407,7 +407,7 @@ fit_svy_model <- function(cluster.geo,
 #                                        alt.strata=svy.strata)
 
       ### draw samples using logit.est and logit.var
-      sampled.post.vec <- SUMMER::expit(stats::rnorm(nsamp, mean = res_adm$res.admin0$direct.logit.est,
+      sampled.post.vec <- SUMMER::expit(stats::rnorm(nsamp, mean = res_adm$res.natl$direct.logit.est,
                                               sd = sqrt(res_adm$res.admin0$direct.logit.var)))
       sampled.post.mat <- matrix(sampled.post.vec, nrow = nsamp)
       res_adm$admin0_post <- sampled.post.mat

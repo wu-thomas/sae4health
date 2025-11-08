@@ -1,7 +1,7 @@
 ###############################################################
 ### test Cote dv, report generation
 ###############################################################
-
+ref_tab_all <- surveyPrev::indicatorList
 if(FALSE){
   reactiveConsole(TRUE)
 

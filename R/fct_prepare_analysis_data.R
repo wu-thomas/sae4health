@@ -8,6 +8,9 @@
 #'
 #' @return TRUE if successful, FALSE otherwise
 #' @noRd
+
+ref_tab_all <- surveyPrev::indicatorList
+
 prepare_analysis_data <- function(CountryInfo, AnalysisInfo, session) {
   
   # Check if already prepared

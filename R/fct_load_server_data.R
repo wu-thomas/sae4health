@@ -7,6 +7,8 @@
 #'
 #' @return Number of new datasets loaded
 #' @noRd
+ref_tab_all <- surveyPrev::indicatorList
+
 load_server_data <- function(CountryInfo, session) {
   if(is.null(golem::get_golem_options()$server_link)) {
     message("Server link not available - skipping server data load")

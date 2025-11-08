@@ -20,8 +20,8 @@ app_server <- function(input, output, session) {
   ### initialize R6 objects
   CountryInfo <- CountryInfo$new()
   AnalysisInfo <- AnalysisInfo$new()
-
-
+  meta_list <- load_meta_data()
+  
   ### home page for the website
   CountryInfo$website_link('https://sae4health.stat.uw.edu')
 

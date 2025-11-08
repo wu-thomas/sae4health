@@ -1,0 +1,104 @@
+---
+title: "deploy_sae4health"
+output: html_document
+date: "2025-11-06"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In this vignette, we will describe how to deploy sae4health both locally and to the UW stat server. 
+
+## Rtools
+
+Download competible verion of rtools from https://cran.r-project.org/bin/windows/Rtools/ if not already done so.
+
+## Prepare renv
+
+This shiny app uses  renv to manage package and versions. Run the following code to restore packages from renv, with xtra steps are needed to install INLA. renv::retore() will be take a while to restore all packages.
+
+```{r}
+install.packages("renv")
+renv::activate()
+options(repos = c(getOption("repos"), INLA = "https://inla.r-inla-download.org/R/testing"))
+renv::install("INLA")
+options(repos = c(CRAN = "https://cloud.r-project.org")) # change back
+renv::update("INLA")
+renv::restore()
+```
+
+## setup local server and run app
+
+Some data, such as county recode data and other country meta data, are saveing in an online server for the app to fetch from. Setup a local server and store a part of the data to locally test functionality and connection.
+
+First, create a folder on local desk top, for example, at C:/Users/username/Desktop/sae4healthServer.
+
+Copy and run the following code in *Terminal* to set up a local server:
+
+
+cd C:/Users/username/Desktop/sae4healthServer
+py -3 -m http.server 8000 # run this line for windows
+python3 -m http.server 8000 # run this line for mac
+
+
+now, a message should appear in terminal with something like "Serving HTTP on :: port 8000 (http://[::]:8000/) ...", indicating the local server deployment is successful.
+
+To run and test app on the local server, run the following code in console. The app will be ran in a separate window, deployed as server version that connects to the local server set up.
+
+```{r}
+pkgload::load_all(export_all = FALSE,helpers = FALSE,attach_testthat = FALSE)
+options( "golem.app.prod" = TRUE)
+#test on local server
+sae4health::run_app(server_link='http://localhost:8000/')
+```
+
+
+
+To imitate the folder structure on server, store the meta data and DHS estimate and any country specific recode data as the structure below:
+
+sae4healthServer/
+└── DHS_survey_dat/
+    ├── DHS_meta_data/
+    │   ├── DHS_api_est.rda
+    │   ├── DHS_meta_preload.rda
+    └── NG/
+    │   ├── DHS 2024
+    |   |   ├── [recode name].rds
+    |   |   ├── [geo info].rds
+    |   |   ├── ...
+
+Where NG can be any country with its recode and GPS data with structure
+
+In this example, Nigeria 2024 can be ran on the locally deployed version of app for testing purpose. More country recode can be added if testing is needed.
+
+
+## deploy to stats server
+
+### For newly deployed app
+
+After gaining admin access to the domain, enter through https://rsc.stat.washington.edu/connect/#/apps/60/access, click info on the right tab, and copy the appId.
+
+Run the following code to login and deploy to connect to the existing domain:
+
+```{r}
+rsconnect::deployApp(
+  appDir = ".",
+  account = "[your netID]",
+  server = "rsc.stat.washington.edu",
+  appId = "[copied appId]"
+)
+```
+
+This command deploys the app to Posit Connect using the startup code defined in app.R. The newly deployed version will appear on https://rsc.stat.washington.edu/sae4health/ and can be managed on https://rsc.stat.washington.edu/connect/#/apps/60/access.
+
+### Future deployment
+
+Running the previous code works fine in future deployment. One other valid method is to first run the following run_app() function, and then click the republish button on the right corner of the newly opened window. This helps you check functionality in the local window before deployment.
+
+```{r}
+pkgload::load_all(export_all = FALSE,helpers = FALSE,attach_testthat = FALSE)
+options( "golem.app.prod" = TRUE)
+sae4health::run_app(server_link='https://sites.stat.washington.edu/sae4health/')
+```
+
