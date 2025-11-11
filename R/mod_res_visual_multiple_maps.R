@@ -255,7 +255,7 @@ mod_res_visual_multiple_maps_ui <- function(id){
 #' res_visual_multiple_maps Server Functions
 #'
 #' @noRd
-mod_res_visual_multiple_maps_server <- function(id,CountryInfo,AnalysisInfo){
+mod_res_visual_multiple_maps_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 

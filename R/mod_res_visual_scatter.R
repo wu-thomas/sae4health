@@ -86,9 +86,13 @@ mod_res_visual_scatter_ui <- function(id){
 #' res_visual_scatter Server Functions
 #'
 #' @noRd
-mod_res_visual_scatter_server <- function(id,CountryInfo,AnalysisInfo){
+mod_res_visual_scatter_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
+    DHS_api_est      <- isolate(MetaInfo$DHS_api_est())
+    DHS.country.meta <- isolate(MetaInfo$DHS.country.meta())
+    DHS.survey.meta  <- isolate(MetaInfo$DHS.survey.meta())
+    DHS.dataset.meta <- isolate(MetaInfo$DHS.dataset.meta())
 
     if (!requireNamespace("plotly", quietly = TRUE)) {
       stop("Package 'plotly' is required for this function. Please install it with install.packages('plotly').")

@@ -41,7 +41,7 @@ mod_indicator_dictionary_ui <- function(id){
 #' indicator_dictionary Server Functions
 #'
 #' @noRd
-mod_indicator_dictionary_server <- function(id,CountryInfo,AnalysisInfo,parent_session){
+mod_indicator_dictionary_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,parent_session){
   moduleServer( id, function(input, output, session){
 
     ns <- session$ns

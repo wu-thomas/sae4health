@@ -11,18 +11,21 @@
 
 ref_tab_all <- surveyPrev::indicatorList
 
-get_survey_year <- function(country=NULL){
+############################################
+## Load meta data and DHS API estimates (no R6, no reactive)
+############################################
 
+
+get_survey_year <- function(country=NULL){
   if(is.null(country)){return(NULL)}
-  surveys <- DHS.survey.meta
+  surveys <-get("DHS.survey.meta", envir = parent.frame())
+  nrow(surveys)
 
   # To see the structure of the returned surveys data frame
   country_svy <- surveys[surveys$CountryName == country, ]
   country_svy_years <- unique(country_svy$SurveyYear)
   if(length(country_svy_years)==0){return(NULL)}
   return(country_svy_years)
-
-
 }
 
 
@@ -39,7 +42,8 @@ get_survey_year <- function(country=NULL){
 
 find_DHS_dat_name <- function(country,svy_year,
                               recode){
-
+  DHS.country.meta <- get("DHS.country.meta", envir = parent.frame())  
+  DHS.dataset.meta <- get("DHS.dataset.meta", envir = parent.frame())                            
   tryCatch({
     DHS_country_code <- DHS.country.meta[DHS.country.meta$CountryName == country,]$DHS_CountryCode
 
@@ -154,7 +158,7 @@ find_recode_path <- function(recode_file=NULL,
 ###############################################################
 
 get_country_GADM <- function(country,resolution=1) {
-
+  DHS.country.meta <- get("DHS.country.meta", envir = parent.frame())
   country_iso3 <- DHS.country.meta[DHS.country.meta$CountryName==country,'ISO3_CountryCode']
 
   gadm_list <- list()
@@ -198,7 +202,7 @@ get_country_GADM <- function(country,resolution=1) {
 ###############################################################
 
 get_country_shapefile <- function(country,source=NULL,...) {
-
+  DHS.country.meta <- get("DHS.country.meta", envir = parent.frame())
   if(country=='Sierra Leone'&&(source!='WHO-download')){
     source ='WHO-preload'
   }
@@ -382,7 +386,8 @@ check_gadm_levels <- function(gadm_list) {
 #tmp.check <- check_dat_avail(country = 'Zambia' , svy_year = 1992 , indicator = 'WS_SRCE_P_BAS')
 
 check_dat_avail <- function(country,svy_year,indicator){
-
+  DHS.country.meta <- get("DHS.country.meta", envir = parent.frame())
+  DHS.dataset.meta <- get("DHS.dataset.meta", envir = parent.frame())
   ### initialize all recode names
 
   recode_list_abbrev <- c('IR','PR','KR','BR','HR','MR','AR','CR')

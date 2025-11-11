@@ -46,10 +46,14 @@ mod_DHS_API_est_ui <- function(id){
 #' DHS_API_est Server Functions
 #'
 #' @noRd
-mod_DHS_API_est_server <- function(id,CountryInfo,AnalysisInfo,parent_session){
+mod_DHS_API_est_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,parent_session){
   moduleServer( id, function(input, output, session){
 
     ns <- session$ns
+    DHS_api_est      <- isolate(MetaInfo$DHS_api_est())
+    DHS.country.meta <- isolate(MetaInfo$DHS.country.meta())
+    DHS.survey.meta  <- isolate(MetaInfo$DHS.survey.meta())
+    DHS.dataset.meta <- isolate(MetaInfo$DHS.dataset.meta())
 
     ###############################################################
     ### text for why make comparison

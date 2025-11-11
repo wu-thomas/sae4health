@@ -121,7 +121,7 @@ mod_survey_dat_input_ui <- function(id){
 #' survey_dat_input Server Functions
 #'
 #' @noRd
-mod_survey_dat_input_server <- function(id,CountryInfo,AnalysisInfo){
+mod_survey_dat_input_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     ref_tab_all <- surveyPrev::indicatorList
@@ -810,7 +810,7 @@ mod_survey_dat_input_server <- function(id,CountryInfo,AnalysisInfo){
     ### prepare analysis data set
     observeEvent(data_pre_snapshot(),{
       
-      prepare_analysis_data(CountryInfo, AnalysisInfo, session)
+      prepare_analysis_data(CountryInfo, AnalysisInfo, session, ref_tab_all)
       
       
       

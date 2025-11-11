@@ -45,11 +45,14 @@ mod_report_preparation_ui <- function(id){
 #' @importFrom gridExtra arrangeGrob tableGrob ttheme_default
 #'
 #' @noRd
-mod_report_preparation_server <- function(id,CountryInfo,AnalysisInfo){
+mod_report_preparation_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     ref_tab_all <- surveyPrev::indicatorList
-    
+    DHS_api_est      <- isolate(MetaInfo$DHS_api_est())
+    DHS.country.meta <- isolate(MetaInfo$DHS.country.meta())
+    DHS.survey.meta  <- isolate(MetaInfo$DHS.survey.meta())
+    DHS.dataset.meta <- isolate(MetaInfo$DHS.dataset.meta())
     if (!requireNamespace("grid", quietly = TRUE)) {
       stop("Package 'grid' is required for this function. Please install it with install.packages('grid').")
     }

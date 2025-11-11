@@ -8,12 +8,15 @@
 #'
 #' @return TRUE if successful, FALSE otherwise
 #' @noRd
-
-ref_tab_all <- surveyPrev::indicatorList
-
-prepare_analysis_data <- function(CountryInfo, AnalysisInfo, session) {
-  
+prepare_analysis_data <- function(CountryInfo, AnalysisInfo, session, ref_tab_all) {
+  ## #following two lines works on local server not deployed
+  ## data("indicatorList", package = "surveyPrev", envir = environment())
+  ## ref_tab_all <- indicatorList
+  ## # sol 2 failed
+  ##ref_tab_all <- get("ref_tab_all", envir = parent.frame())
   # Check if already prepared
+  print(head(ref_tab_all))
+  indicatorList <- ref_tab_all
   if(!is.null(CountryInfo$svy_analysis_dat())) {
     return(TRUE)
   }

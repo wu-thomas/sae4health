@@ -303,9 +303,14 @@ mod_model_selection_ui <- function(id){
 #' @noRd
 #'
 
-mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,parent_session){
+mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,parent_session){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
+    ref_tab_all <- surveyPrev::indicatorList
+    DHS_api_est      <- isolate(MetaInfo$DHS_api_est())
+    DHS.country.meta <- isolate(MetaInfo$DHS.country.meta())
+    DHS.survey.meta  <- isolate(MetaInfo$DHS.survey.meta())
+    DHS.dataset.meta <- isolate(MetaInfo$DHS.dataset.meta())
 
     if (!isTRUE(requireNamespace("INLA", quietly = TRUE))) {
       stop("You need to install the packages 'INLA'. Please run in your R terminal:\n  install.packages('INLA', repos=c(getOption('repos'), INLA='https://inla.r-inla-download.org/R/stable'), dep=TRUE)")
@@ -523,7 +528,7 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,parent_sessi
           }
 
           # Prepare analysis dataset
-          prepare_analysis_data(CountryInfo, AnalysisInfo, session)
+          prepare_analysis_data(CountryInfo, AnalysisInfo, session, ref_tab_all)
         }
 
    

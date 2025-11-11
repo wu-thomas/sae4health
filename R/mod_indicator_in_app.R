@@ -53,7 +53,7 @@ mod_indicator_in_app_ui <- function(id){
 #' indicator_in_app Server Functions
 #'
 #' @noRd
-mod_indicator_in_app_server <- function(id,CountryInfo,AnalysisInfo,parent_session){
+mod_indicator_in_app_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,parent_session){
   moduleServer( id, function(input, output, session){
 
     ns <- session$ns

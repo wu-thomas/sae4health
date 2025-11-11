@@ -21,19 +21,11 @@ MetaInfo <- R6::R6Class("MetaInfo",
     DHS.dataset.meta = NULL,
     DHS_api_est      = NULL,
     
-    initialize = function(meta_list = NULL) {
+    initialize = function() {
       self$DHS.country.meta <- reactiveVal(NULL)
       self$DHS.survey.meta  <- reactiveVal(NULL)
       self$DHS.dataset.meta <- reactiveVal(NULL)
       self$DHS_api_est      <- reactiveVal(NULL)
-      
-      if (!is.null(meta_list)) {
-        if (!is.null(meta_list$DHS.country.meta)) self$DHS.country.meta(meta_list$DHS.country.meta)
-        if (!is.null(meta_list$DHS.survey.meta))  self$DHS.survey.meta(meta_list$DHS.survey.meta)
-        if (!is.null(meta_list$DHS.dataset.meta)) self$DHS.dataset.meta(meta_list$DHS.dataset.meta)
-        if (!is.null(meta_list$DHS_api_est))      self$DHS_api_est(meta_list$DHS_api_est)
-      }
-      
     }
   )
 )

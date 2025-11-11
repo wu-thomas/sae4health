@@ -102,9 +102,13 @@ mod_res_visual_prev_map_ui <- function(id) {
 #' result_visual Server Functions
 #'
 #' @noRd
-mod_res_visual_prev_map_server <- function(id,CountryInfo,AnalysisInfo){
+mod_res_visual_prev_map_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
+    DHS_api_est      <- isolate(MetaInfo$DHS_api_est())
+    DHS.country.meta <- isolate(MetaInfo$DHS.country.meta())
+    DHS.survey.meta  <- isolate(MetaInfo$DHS.survey.meta())
+    DHS.dataset.meta <- isolate(MetaInfo$DHS.dataset.meta())
 
     ###############################################################
     ### display country, survey and indicator info

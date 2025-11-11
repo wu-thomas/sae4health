@@ -141,11 +141,17 @@ mod_country_specify_ui <- function(id){
 #' country_specify Server Functions
 #'
 #' @noRd
-mod_country_specify_server <- function(id,CountryInfo,AnalysisInfo,parent_session){
+mod_country_specify_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,parent_session){
   moduleServer( id, function(input, output, session){
 
     ns <- session$ns
     ref_tab_all <- surveyPrev::indicatorList
+    DHS_api_est      <- isolate(MetaInfo$DHS_api_est())
+    DHS.country.meta <- isolate(MetaInfo$DHS.country.meta())
+    DHS.survey.meta  <- isolate(MetaInfo$DHS.survey.meta())
+    DHS.dataset.meta <- isolate(MetaInfo$DHS.dataset.meta())
+    
+    print(head(DHS.dataset.meta))
     
     observeEvent(input$switch_bar, {
       message('switching')

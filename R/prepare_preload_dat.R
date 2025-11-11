@@ -146,14 +146,13 @@ if(FALSE){
     filter(as.integer(SurveyYear) > 1999)
   formatted_date <- format(Sys.Date(), "%m%d%Y")
 
-  saveRDS(
-    list(
-      DHS.country.meta = DHS.country.meta,
-      DHS.survey.meta  = DHS.survey.meta,
-      DHS.dataset.meta = DHS.dataset.meta
-    ),
-    file = "C:/Users/lucyx/Desktop/DHS/DHS_meta_data/DHS_meta_preload.rds"
+  save(
+    DHS.country.meta,
+    DHS.survey.meta,
+    DHS.dataset.meta,
+    file = "/Users/jonno/Dropbox/YunhanJon/DHS_survey_dat/DHS_meta_data/DHS_meta_preload.rda"
   )
+  
 
 
 }
@@ -1012,7 +1011,6 @@ if(FALSE){
   colnames(DHS_api_est) <- c('DHS Standard ID','Definition','Estimate','Country Code','Country','Survey Year','By Variable Label')
   DHS_api_est <- DHS_api_est[,c('Country','Country Code','Survey Year','DHS Standard ID','Definition','Estimate','By Variable Label')]
   save(DHS_api_est,file='data/new/DHS_api_est.rda')
-  saveRDS(DHS_api_est,'C:/Users/lucyx/Desktop/DHS/DHS_meta_data/DHS_api_est.rds')
 
 
 }

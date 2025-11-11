@@ -20,7 +20,9 @@ app_server <- function(input, output, session) {
   ### initialize R6 objects
   CountryInfo <- CountryInfo$new()
   AnalysisInfo <- AnalysisInfo$new()
-  meta_list <- load_meta_data()
+  MetaInfo <- MetaInfo$new()
+  #populate MetaInfo
+  load_meta_data(MetaInfo)
   
   ### home page for the website
   CountryInfo$website_link('https://sae4health.stat.uw.edu')
@@ -73,22 +75,22 @@ app_server <- function(input, output, session) {
 
 
   ### load modules
-  mod_landing_page_server("landing_page_1", CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,parent_session=session)
-  mod_country_specify_server("country_specify_1", CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,parent_session=session)
-  mod_survey_dat_input_server("survey_dat_input_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo)
-  mod_model_selection_server("model_selection_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,parent_session=session)
-  mod_result_tabulate_server("result_tabulate_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo)
-  mod_report_preparation_server("report_preparation_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo)
+  mod_landing_page_server("landing_page_1", CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo,parent_session=session)
+  mod_country_specify_server("country_specify_1", CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo,parent_session=session)
+  mod_survey_dat_input_server("survey_dat_input_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo)
+  mod_model_selection_server("model_selection_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,parent_session=session,MetaInfo=MetaInfo)
+  mod_result_tabulate_server("result_tabulate_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo)
+  mod_report_preparation_server("report_preparation_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo)
 
-  mod_res_visual_prev_map_server("res_visual_prev_map_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo)
-  mod_res_visual_multiple_maps_server("res_visual_multiple_maps_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo)
+  mod_res_visual_prev_map_server("res_visual_prev_map_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo)
+  mod_res_visual_multiple_maps_server("res_visual_multiple_maps_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo)
 
-  mod_res_visual_scatter_server("res_visual_scatter_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo)
-  mod_res_visual_ridge_server("res_visual_ridge_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo)
+  mod_res_visual_scatter_server("res_visual_scatter_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo)
+  mod_res_visual_ridge_server("res_visual_ridge_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo)
 
-  mod_indicator_in_app_server("indicator_in_app_1", CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,parent_session=session)
-  mod_indicator_dictionary_server("indicator_dictionary_1", CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,parent_session=session)
-  mod_DHS_API_est_server("DHS_API_est_1", CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,parent_session=session)
+  mod_indicator_in_app_server("indicator_in_app_1", CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo,parent_session=session)
+  mod_indicator_dictionary_server("indicator_dictionary_1", CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo,parent_session=session)
+  mod_DHS_API_est_server("DHS_API_est_1", CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo,parent_session=session)
 
   ### Hide/show Data Upload tab based on server version
 is_server_version <- !(is.null(golem::get_golem_options()$server_link))

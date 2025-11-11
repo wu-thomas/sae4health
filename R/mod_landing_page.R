@@ -393,7 +393,7 @@ border: 1px solid #666666}
 #'
 #'
 
-mod_landing_page_server <- function(id,CountryInfo,AnalysisInfo,parent_session){
+mod_landing_page_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,parent_session){
   moduleServer( id, function(input, output, session){
 
     ns <- session$ns
