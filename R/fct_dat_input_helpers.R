@@ -216,7 +216,7 @@ get_country_shapefile <- function(country,source=NULL,...) {
   ### WHO preload
   #################
   if(source =='WHO-preload'){
-
+  #
     WHO_shp_path <- system.file("WHO_shp", country_iso3, paste0(country_iso3,"_shp.rds"),
                                 package = "sae4health")
 

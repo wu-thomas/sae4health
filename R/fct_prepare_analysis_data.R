@@ -1,3 +1,4 @@
+# library(surveyPrev)
 #' Prepare Analysis Dataset from Survey Data
 #'
 #' @description Prepares analysis dataset from raw survey data
@@ -93,7 +94,7 @@ prepare_analysis_data <- function(CountryInfo, AnalysisInfo, session, ref_tab_al
     })
     
     if (!is.null(res_adm)) {
-      AnalysisInfo$Natl_res(res_adm$res.admin0)
+      AnalysisInfo$Natl_res(res_adm$res.natl)
     }
     
     TRUE

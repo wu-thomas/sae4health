@@ -2270,7 +2270,7 @@ if(FALSE){
   #tmp.unit <- examine.res$Unit$`Admin-2`
   #tmp.FH <- examine.res$FH$`Admin-2`
   #gadm.list.tmp <-  CountryInfo$GADM_list_smoothed()
-  AnalysisInfo$Natl_res(examine.res$Direct$National$res.admin0$direct.est)
+  AnalysisInfo$Natl_res(examine.res$Direct$National$res.natl$direct.est)
   ###############################################################
   ### Report
   ###############################################################
@@ -3279,7 +3279,7 @@ if(FALSE){
   #tmp.unit <- examine.res$Unit$`Admin-2`
   #tmp.FH <- examine.res$FH$`Admin-2`
   #gadm.list.tmp <-  CountryInfo$GADM_list_smoothed()
-  AnalysisInfo$Natl_res(examine.res$Direct$National$res.admin0$direct.est)
+  AnalysisInfo$Natl_res(examine.res$Direct$National$res.natl$direct.est)
 
 }
 
@@ -3662,7 +3662,7 @@ if(FALSE){
   #tmp.unit <- examine.res$Unit$`Admin-2`
   #tmp.FH <- examine.res$FH$`Admin-2`
   #gadm.list.tmp <-  CountryInfo$GADM_list_smoothed()
-  AnalysisInfo$Natl_res(examine.res$Direct$National$res.admin0$direct.est)
+  AnalysisInfo$Natl_res(examine.res$Direct$National$res.natl$direct.est)
 
 }
 

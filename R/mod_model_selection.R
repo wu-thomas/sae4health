@@ -305,6 +305,13 @@ mod_model_selection_ui <- function(id){
 
 mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,parent_session){
   moduleServer( id, function(input, output, session){
+    # library(sn) ## for INLA to run, just declare here with other packages
+    # library(labelled)
+    # library(naniar)
+    # library(sjlabelled)
+    # library(dplyr)
+    # library(data.table)
+    # library(haven)
     ns <- session$ns
     ref_tab_all <- surveyPrev::indicatorList
     DHS_api_est      <- isolate(MetaInfo$DHS_api_est())
@@ -1387,8 +1394,8 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
 
             ### set national estimates
             if(tmp.method=='Direct'&&tmp.adm=='National'){
-              AnalysisInfo$Natl_res(tmp.res$res.admin0)
-              message(tmp.res$res.admin0$direct.est)
+              AnalysisInfo$Natl_res(tmp.res$res.natl)
+              message(tmp.res$res.natl$direct.est)
             }
 
 
@@ -1560,8 +1567,8 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
 
             ### set national estimates
             if(tmp.method=='Direct'&&tmp.adm=='National'){
-              AnalysisInfo$Natl_res(tmp.res$res.admin0)
-              message(tmp.res$res.admin0$direct.est)
+              AnalysisInfo$Natl_res(tmp.res$res.natl)
+              message(tmp.res$res.natl$direct.est)
             }
 
 

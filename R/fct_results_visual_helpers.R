@@ -673,8 +673,8 @@ if(FALSE){
 
   tmp.res.obj <- mdg.ex.model.res$Direct$'National'
   nsamp=1000
-  sampled.post.vec <- SUMMER::expit(stats::rnorm(nsamp, mean = tmp.res.obj$res.admin0$direct.logit.est,
-                            sd = sqrt(tmp.res.obj$res.admin0$direct.logit.var)))
+  sampled.post.vec <- SUMMER::expit(stats::rnorm(nsamp, mean = tmp.res.obj$res.natl$direct.logit.est,
+                            sd = sqrt(tmp.res.obj$res.natl$direct.logit.var)))
   sampled.post.mat <- matrix(sampled.post.vec, nrow = nsamp)
   tmp.res.obj$admin0_post <- sampled.post.mat
 
@@ -1696,8 +1696,8 @@ range_across_model <- function(result.model.list,
 
 extract_res_summary <- function(res.obj){
 
-  if(!is.null(res.obj[['res.admin0']])){
-    return(res.obj[['res.admin0']])
+  if(!is.null(res.obj[['res.natl']])){
+    return(res.obj[['res.natl']])
   }
 
   if(!is.null(res.obj[['res.admin1']])){
