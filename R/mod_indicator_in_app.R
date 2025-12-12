@@ -160,10 +160,18 @@ mod_indicator_in_app_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,par
       selected_ind_table<- selected_ind_table[selected_ind_table$ID ==tmp_indicator_ID,]
 
       colnames(selected_ind_table) <- c("DHS Standard ID" ,"Label","Full Definition","DHS Report Chapter")
-
-      selected_ind_table <- merge(selected_ind_table[, c("DHS Standard ID" ,"Label","DHS Report Chapter")],
-                                  DHS_ind_dictionary[,c("DHS Standard Indicator ID","Full Definition","Denominator",
-                                                        "Measurement Type")],
+      
+      if(! selected_ind_table$`DHS Standard ID` %in% DHS_ind_dictionary$`DHS Standard Indicator ID`) {
+        selected_ind_table_merge <- selected_ind_table[, c("DHS Standard ID" ,"Label","Full Definition","DHS Report Chapter")]
+        DHS_ind_dictionary_merge <- DHS_ind_dictionary[,c("DHS Standard Indicator ID","Denominator","Measurement Type")]
+      } else {
+        selected_ind_table_merge <- selected_ind_table[, c("DHS Standard ID" ,"Label","DHS Report Chapter")]
+        DHS_ind_dictionary_merge <- DHS_ind_dictionary[,c("DHS Standard Indicator ID","Full Definition","Denominator",
+                                                        "Measurement Type")]
+      }
+      
+      selected_ind_table <- merge(selected_ind_table_merge,
+                                  DHS_ind_dictionary_merge,
                                   by.x="DHS Standard ID",
                                   by.y="DHS Standard Indicator ID",
                                   all.x=T)

@@ -1,4 +1,4 @@
-# library(surveyPrev)
+library(surveyPrev)
 #' Prepare Analysis Dataset from Survey Data
 #'
 #' @description Prepares analysis dataset from raw survey data
@@ -16,7 +16,7 @@ prepare_analysis_data <- function(CountryInfo, AnalysisInfo, session, ref_tab_al
   ## # sol 2 failed
   ##ref_tab_all <- get("ref_tab_all", envir = parent.frame())
   # Check if already prepared
-  print(head(ref_tab_all))
+  #print(head(ref_tab_all))
   indicatorList <- ref_tab_all
   if(!is.null(CountryInfo$svy_analysis_dat())) {
     return(TRUE)

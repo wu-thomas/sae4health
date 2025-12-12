@@ -635,6 +635,10 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
             ### prepare admin level GPS info if not stored
             geo_info_list <- AnalysisInfo$cluster_admin_info_list()
             tmp.geo.info <- geo_info_list[[tmp.adm]]
+            
+            cluster.geo1 = CountryInfo$svy_GPS_dat()
+            gadm.list1 = CountryInfo$GADM_list()
+            save(cluster.geo1, gadm.list1, file = "clusterInfo.RData")
 
             if(is.null(tmp.geo.info)){
 

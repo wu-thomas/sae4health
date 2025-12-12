@@ -137,8 +137,10 @@ screen_svy_model <- function(cluster.admin.info,
                              strat.gadm.level = 1,
                              method=c('Direct','FH','Unit')[1],
                              svy.strata=NULL){
-
-
+  
+  if("age" %in% colnames(analysis.dat)){
+    analysis.dat$age <- NULL
+  }
 
   if (!requireNamespace("survey", quietly = TRUE)) {
     stop("Package 'survey' is required for this function. Please install it with install.packages('survey').")

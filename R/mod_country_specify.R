@@ -151,7 +151,7 @@ mod_country_specify_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,pare
     DHS.survey.meta  <- isolate(MetaInfo$DHS.survey.meta())
     DHS.dataset.meta <- isolate(MetaInfo$DHS.dataset.meta())
     
-    print(head(DHS.dataset.meta))
+    #print(head(DHS.dataset.meta))
     
     observeEvent(input$switch_bar, {
       message('switching')
