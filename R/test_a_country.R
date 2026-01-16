@@ -341,10 +341,8 @@ if(FALSE){
   ###############################################################
 
   ## unit-level admin-3 html
-  tmp.plot.html <- prevMap.leaflet(res.obj =  examine.res$Unit$`Admin-3`,
-                  gadm.shp = gadm.list.tmp[["Admin-3"]],
-                  model.gadm.level = 3,
-                  strata.gadm.level = 1,
+  tmp.plot.html <- surveyPrev::prevMap.web(res.obj =  examine.res$Unit$`Admin-3`,
+                  poly.shp = gadm.list.tmp[["Admin-3"]],
                   value.to.plot = 'mean',
                   legend.label = 'Estimates',
                   hatching.density = 15,
@@ -360,10 +358,8 @@ if(FALSE){
 
   hatching.density.country <- round(sqrt(9e07/tmp.area))
 
-  tmp.plot <- prevMap.leaflet(res.obj = examine.res$Direct$`Admin-3`,
-                              gadm.shp = gadm.list.tmp[["Admin-3"]],
-                              model.gadm.level = 3,
-                              strata.gadm.level = 1,
+  tmp.plot <- surveyPrev::prevMap.web(res.obj = examine.res$Direct$`Admin-3`,
+                              poly.shp = gadm.list.tmp[["Admin-3"]], 
                               value.to.plot ='mean', #mean $CI.width
                               legend.label = 'Estimates',
                               map.title='this is a long longlong title',
@@ -395,10 +391,8 @@ if(FALSE){
   ### ridge plot
 
   tmp.res <- examine.res$Unit$'Admin-2'
-  test.post <- posterior_ridge_plot(res.obj =  tmp.res,
+  test.post <- surveyPrev::ridgeprevPlot(res.obj =  tmp.res,
                                     plot.extreme.num=354, #plot.extreme.num=10
-                                    model.gadm.level = admin_to_num('Admin-2'),
-                                    strata.gadm.level = 1,
                                     legend.label = 'Value',
                                     color.reverse= T,
                                     plot.format = c('Long','Wide')[1], # for extreme regions, side-by-side or long plot
@@ -762,10 +756,8 @@ if(FALSE){
   ###############################################################
 
   ## unit-level admin-3 html
-  tmp.plot.html <- prevMap.leaflet(res.obj =  examine.res$Unit$`Admin-3`,
-                                   gadm.shp = gadm.list.tmp[["Admin-3"]],
-                                   model.gadm.level = 3,
-                                   strata.gadm.level = 1,
+  tmp.plot.html <- surveyPrev::prevMap.web(res.obj =  examine.res$Unit$`Admin-3`,
+                                   poly.shp = gadm.list.tmp[["Admin-3"]],
                                    value.to.plot = 'mean',
                                    legend.label = 'Estimates',
                                    hatching.density = 15,
@@ -781,10 +773,8 @@ if(FALSE){
 
   hatching.density.country <- round(sqrt(9e07/tmp.area))
 
-  tmp.plot <- prevMap.leaflet(res.obj = examine.res$Direct$`Admin-3`,
-                              gadm.shp = gadm.list.tmp[["Admin-3"]],
-                              model.gadm.level = 3,
-                              strata.gadm.level = 1,
+  tmp.plot <- surveyPrev::prevMap.web(res.obj = examine.res$Direct$`Admin-3`,
+                              poly.shp = gadm.list.tmp[["Admin-3"]],
                               value.to.plot ='mean', #mean $CI.width
                               legend.label = 'Estimates',
                               map.title='this is a long longlong title',
@@ -816,10 +806,8 @@ if(FALSE){
   ### ridge plot
 
   tmp.res <- examine.res$Unit$'Admin-2'
-  test.post <- posterior_ridge_plot(res.obj =  tmp.res,
+  test.post <- surveyPrev::ridgeprevPlot(res.obj =  tmp.res,
                                     plot.extreme.num=354, #plot.extreme.num=10
-                                    model.gadm.level = admin_to_num('Admin-2'),
-                                    strata.gadm.level = 1,
                                     legend.label = 'Value',
                                     color.reverse= T,
                                     plot.format = c('Long','Wide')[1], # for extreme regions, side-by-side or long plot
@@ -1186,10 +1174,8 @@ if(FALSE){
   ###############################################################
 
   ## unit-level admin-3 html
-  tmp.plot.html <- prevMap.leaflet(res.obj =  examine.res$Unit$`Admin-3`,
-                                   gadm.shp = gadm.list.tmp[["Admin-3"]],
-                                   model.gadm.level = 3,
-                                   strata.gadm.level = 1,
+  tmp.plot.html <- surveyPrev::prevMap.web(res.obj =  examine.res$Unit$`Admin-3`,
+                                   poly.shp = gadm.list.tmp[["Admin-3"]],
                                    value.to.plot = 'mean',
                                    legend.label = 'Estimates',
                                    hatching.density = 15,
@@ -1205,10 +1191,8 @@ if(FALSE){
 
   hatching.density.country <- round(sqrt(9e07/tmp.area))
 
-  tmp.plot <- prevMap.leaflet(res.obj = examine.res$Direct$`Admin-3`,
-                              gadm.shp = gadm.list.tmp[["Admin-3"]],
-                              model.gadm.level = 3,
-                              strata.gadm.level = 1,
+  tmp.plot <- surveyPrev::prevMap.web(res.obj = examine.res$Direct$`Admin-3`,
+                              poly.shp = gadm.list.tmp[["Admin-3"]],
                               value.to.plot ='mean', #mean $CI.width
                               legend.label = 'Estimates',
                               map.title='this is a long longlong title',
@@ -1240,10 +1224,8 @@ if(FALSE){
   ### ridge plot
 
   tmp.res <- examine.res$Unit$'Admin-2'
-  test.post <- posterior_ridge_plot(res.obj =  tmp.res,
+  test.post <- surveyPrev::ridgeprevPlot(res.obj =  tmp.res,
                                     plot.extreme.num=354, #plot.extreme.num=10
-                                    model.gadm.level = admin_to_num('Admin-2'),
-                                    strata.gadm.level = 1,
                                     legend.label = 'Value',
                                     color.reverse= T,
                                     plot.format = c('Long','Wide')[1], # for extreme regions, side-by-side or long plot
@@ -1829,10 +1811,8 @@ if(FALSE){
   ###############################################################
 
   ## unit-level admin-3 html
-  tmp.plot.html <- prevMap.leaflet(res.obj =  examine.res$Unit$`Admin-3`,
-                                   gadm.shp = gadm.list.tmp[["Admin-3"]],
-                                   model.gadm.level = 3,
-                                   strata.gadm.level = 1,
+  tmp.plot.html <- surveyPrev::prevMap.web(res.obj =  examine.res$Unit$`Admin-3`,
+                                   poly.shp = gadm.list.tmp[["Admin-3"]],
                                    value.to.plot = 'mean',
                                    legend.label = 'Estimates',
                                    hatching.density = 15,
@@ -1848,10 +1828,8 @@ if(FALSE){
 
   hatching.density.country <- round(sqrt(9e07/tmp.area))
 
-  tmp.plot <- prevMap.leaflet(res.obj = examine.res$Direct$`Admin-3`,
-                              gadm.shp = gadm.list.tmp[["Admin-3"]],
-                              model.gadm.level = 3,
-                              strata.gadm.level = 1,
+  tmp.plot <- surveyPrev::prevMap.web(res.obj = examine.res$Direct$`Admin-3`,
+                              poly.shp = gadm.list.tmp[["Admin-3"]],
                               value.to.plot ='mean', #mean $CI.width
                               legend.label = 'Estimates',
                               map.title='this is a long longlong title',
@@ -1883,10 +1861,8 @@ if(FALSE){
   ### ridge plot
 
   tmp.res <- examine.res$Unit$'Admin-2'
-  test.post <- posterior_ridge_plot(res.obj =  tmp.res,
+  test.post <- surveyPrev::ridgeprevPlot(res.obj =  tmp.res,
                                     plot.extreme.num=354, #plot.extreme.num=10
-                                    model.gadm.level = admin_to_num('Admin-2'),
-                                    strata.gadm.level = 1,
                                     legend.label = 'Value',
                                     color.reverse= T,
                                     plot.format = c('Long','Wide')[1], # for extreme regions, side-by-side or long plot
@@ -2770,10 +2746,8 @@ if(FALSE){
 
 
       one.static.plot <-  tryCatch({
-        tmp.plot <- suppressWarnings(prevMap.static(res.obj = model_res_tmp,
-                                                    gadm.shp = CountryInfo$GADM_list_smoothed()[[tmp.adm]],
-                                                    model.gadm.level = admin_to_num(tmp.adm),
-                                                    strata.gadm.level = CountryInfo$GADM_strata_level(),
+        tmp.plot <- suppressWarnings(surveyPrev::prevMap(res.obj = model_res_tmp,
+                                                    poly.shp = CountryInfo$GADM_list_smoothed()[[tmp.adm]],
                                                     value.to.plot =tmp_measure,
                                                     legend.label = measure_match[tmp_measure],
                                                     map.title=NULL,
@@ -2843,10 +2817,8 @@ if(FALSE){
   ###############################################################
 
   ## unit-level admin-3 html
-  tmp.plot.html <- prevMap.leaflet(res.obj =  examine.res$Unit$`Admin-3`,
-                                   gadm.shp = gadm.list.tmp[["Admin-3"]],
-                                   model.gadm.level = 3,
-                                   strata.gadm.level = 1,
+  tmp.plot.html <- surveyPrev::prevMap.web(res.obj =  examine.res$Unit$`Admin-3`,
+                                   poly.shp = gadm.list.tmp[["Admin-3"]],
                                    value.to.plot = 'mean',
                                    legend.label = 'Estimates',
                                    hatching.density = 15,
@@ -2862,10 +2834,8 @@ if(FALSE){
 
   hatching.density.country <- round(sqrt(9e07/tmp.area))
 
-  tmp.plot <- prevMap.leaflet(res.obj = examine.res$Direct$`Admin-3`,
-                              gadm.shp = gadm.list.tmp[["Admin-3"]],
-                              model.gadm.level = 3,
-                              strata.gadm.level = 1,
+  tmp.plot <- surveyPrev::prevMap.web(res.obj = examine.res$Direct$`Admin-3`,
+                              poly.shp = gadm.list.tmp[["Admin-3"]],
                               value.to.plot ='mean', #mean $CI.width
                               legend.label = 'Estimates',
                               map.title='this is a long longlong title',
@@ -2897,10 +2867,8 @@ if(FALSE){
   ### ridge plot
 
   tmp.res <- examine.res$Unit$'Admin-2'
-  test.post <- posterior_ridge_plot(res.obj =  tmp.res,
+  test.post <- surveyPrev::ridgeprevPlot(res.obj =  tmp.res,
                                     plot.extreme.num=354, #plot.extreme.num=10
-                                    model.gadm.level = admin_to_num('Admin-2'),
-                                    strata.gadm.level = 1,
                                     legend.label = 'Value',
                                     color.reverse= T,
                                     plot.format = c('Long','Wide')[1], # for extreme regions, side-by-side or long plot

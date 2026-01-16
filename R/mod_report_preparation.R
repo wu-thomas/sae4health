@@ -733,10 +733,8 @@ mod_report_preparation_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
 
 
                 one.static.plot <-  tryCatch({
-                  tmp.plot <- suppressWarnings(prevMap.static(res.obj = model_res_tmp,
-                                                              gadm.shp = CountryInfo$GADM_list_smoothed()[[tmp.adm]],
-                                                              model.gadm.level = admin_to_num(tmp.adm),
-                                                              strata.gadm.level = CountryInfo$GADM_strata_level(),
+                  tmp.plot <- suppressWarnings(surveyPrev::prevMap(res.obj = model_res_tmp,
+                                                              poly.shp = CountryInfo$GADM_list_smoothed()[[tmp.adm]],
                                                               value.to.plot =tmp_measure,
                                                               legend.label = measure_match[tmp_measure],
                                                               map.title=NULL,

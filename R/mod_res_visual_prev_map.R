@@ -374,10 +374,8 @@ mod_res_visual_prev_map_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo)
       }
 
       prev.interactive.plot <-  tryCatch({
-        suppressWarnings(prevMap.leaflet(res.obj = model_res_selected,
-                                    gadm.shp = CountryInfo$GADM_list_smoothed()[[selected_adm]],
-                                    model.gadm.level = admin_to_num(selected_adm),
-                                    strata.gadm.level = CountryInfo$GADM_strata_level(),
+        suppressWarnings(surveyPrev::prevMap.web(res.obj = model_res_selected,
+                                    poly.shp = CountryInfo$GADM_list_smoothed()[[selected_adm]],
                                     value.to.plot =selected_measure,
                                     legend.label = 'Estimates',
                                     hatching.density = hatching.density.country,
@@ -441,10 +439,8 @@ mod_res_visual_prev_map_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo)
 
       prev.static.plot <-  tryCatch({
 
-        prev.static.plot <- suppressWarnings(prevMap.static(res.obj = model_res_selected,
-                                                            gadm.shp = CountryInfo$GADM_list_smoothed()[[selected_adm]],
-                                                            model.gadm.level = admin_to_num(selected_adm),
-                                                            strata.gadm.level = CountryInfo$GADM_strata_level(),
+        prev.static.plot <- suppressWarnings(surveyPrev::prevMap(res.obj = model_res_selected,
+                                                            poly.shp = CountryInfo$GADM_list_smoothed()[[selected_adm]],
                                                             value.to.plot =selected_measure,
                                                             threshold.p = selected_threshold,
                                                             legend.label = 'Estimates',

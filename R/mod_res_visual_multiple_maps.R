@@ -571,10 +571,8 @@ mod_res_visual_multiple_maps_server <- function(id,CountryInfo,AnalysisInfo,Meta
 
 
           one.interactive.plot <-  tryCatch({
-            suppressWarnings(prevMap.leaflet(res.obj = model_res_selected,
-                                             gadm.shp = CountryInfo$GADM_list_smoothed()[[selected_adm]],
-                                             model.gadm.level = admin_to_num(selected_adm),
-                                             strata.gadm.level = CountryInfo$GADM_strata_level(),
+            suppressWarnings(surveyPrev::prevMap.web(res.obj = model_res_selected,
+                                             poly.shp = CountryInfo$GADM_list_smoothed()[[selected_adm]],
                                              value.to.plot =selected_measure,
                                              legend.label = measure_match[selected_measure],
                                              hatching.density = hatching.density.country,
@@ -625,10 +623,8 @@ mod_res_visual_multiple_maps_server <- function(id,CountryInfo,AnalysisInfo,Meta
           )
 
           one.static.plot <-  tryCatch({
-            tmp.plot <- suppressWarnings(prevMap.static(res.obj = model_res_selected,
-                                             gadm.shp = CountryInfo$GADM_list_smoothed()[[selected_adm]],
-                                             model.gadm.level = admin_to_num(selected_adm),
-                                             strata.gadm.level = CountryInfo$GADM_strata_level(),
+            tmp.plot <- suppressWarnings(surveyPrev::prevMap(res.obj = model_res_selected,
+                                             poly.shp = CountryInfo$GADM_list_smoothed()[[selected_adm]],
                                              value.to.plot =selected_measure,
                                              legend.label = measure_match[selected_measure],
                                              map.title=NULL,
@@ -1067,10 +1063,8 @@ mod_res_visual_multiple_maps_server <- function(id,CountryInfo,AnalysisInfo,Meta
               tmp.model.res <- model_res_all[[tmp.method]][[tmp.adm]]
 
               tmp.interactive.plot <-  tryCatch({
-                tmp.plot <- suppressWarnings(prevMap.leaflet(res.obj = tmp.model.res,
-                                                 gadm.shp = CountryInfo$GADM_list_smoothed()[[tmp.adm]],
-                                                 model.gadm.level = admin_to_num(tmp.adm),
-                                                 strata.gadm.level = CountryInfo$GADM_strata_level(),
+                tmp.plot <- suppressWarnings(surveyPrev::prevMap.web(res.obj = tmp.model.res,
+                                                 poly.shp = CountryInfo$GADM_list_smoothed()[[tmp.adm]],
                                                  value.to.plot = value.to.plot,
                                                  legend.label = measure_match[value.to.plot],
                                                  hatching.density = hatching.density.country,
@@ -1153,10 +1147,8 @@ mod_res_visual_multiple_maps_server <- function(id,CountryInfo,AnalysisInfo,Meta
 
               tmp.static.plot <-  tryCatch({
 
-                tmp.plot <- suppressWarnings(prevMap.static(res.obj = tmp.model.res,
-                                                             gadm.shp = CountryInfo$GADM_list_smoothed()[[tmp.adm]],
-                                                             model.gadm.level = admin_to_num(tmp.adm),
-                                                             strata.gadm.level = CountryInfo$GADM_strata_level(),
+                tmp.plot <- suppressWarnings(surveyPrev::prevMap(res.obj = tmp.model.res,
+                                                             poly.shp = CountryInfo$GADM_list_smoothed()[[tmp.adm]],
                                                              value.to.plot = value.to.plot,
                                                              legend.label = measure_match[value.to.plot],
                                                              map.title=NULL,

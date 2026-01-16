@@ -243,7 +243,7 @@ format_tab_num <- function(survey.res){
 #'
 #'
 
-
+if(FALSE){
 prevMap.leaflet <- function(res.obj,
                             gadm.shp ,
                             model.gadm.level,
@@ -654,6 +654,8 @@ prevMap.leaflet <- function(res.obj,
   }
 
   return(adm.map)
+}
+
 }
 
 

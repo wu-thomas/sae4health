@@ -8,9 +8,9 @@
 ###############################################################
 ###  Given a country, find the available surveys (years)
 ###############################################################
-
-ref_tab_all <- surveyPrev::indicatorList
-
+library(surveyPrev)
+#ref_tab_all <- surveyPrev::indicatorList
+ref_tab_all <- indicatorList
 ############################################
 ## Load meta data and DHS API estimates (no R6, no reactive)
 ############################################

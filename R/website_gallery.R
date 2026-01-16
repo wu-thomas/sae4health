@@ -361,10 +361,8 @@ if(FALSE){
 
   hatching.density.country <- round(sqrt(9e07/tmp.area))
 
-  adm3_direct_mean <- prevMap.leaflet(res.obj =  examine.res$Direct$`Admin-3`,
-                                    gadm.shp = gadm.list.tmp[["Admin-3"]],
-                                    model.gadm.level = 3,
-                                    strata.gadm.level = 1,
+  adm3_direct_mean <- surveyPrev::prevMap.web(res.obj =  examine.res$Direct$`Admin-3`,
+                                    poly.shp = gadm.list.tmp[["Admin-3"]],
                                     value.to.plot = 'mean',
                                     legend.label = 'Mean',
                                     hatching.density = 60,
@@ -376,10 +374,8 @@ if(FALSE){
   htmlwidgets::saveWidget(adm3_unit_mean, file=paste0(map_dir,"RW_adm3_direct_mean.html"))
 
   ## unit-level admin-3 mean
-  adm3_unit_mean <- prevMap.leaflet(res.obj =  examine.res$Unit$`Admin-3`,
-                  gadm.shp = gadm.list.tmp[["Admin-3"]],
-                  model.gadm.level = 3,
-                  strata.gadm.level = 1,
+  adm3_unit_mean <- surveyPrev::prevMap.web(res.obj =  examine.res$Unit$`Admin-3`,
+                  poly.shp = gadm.list.tmp[["Admin-3"]],
                   value.to.plot = 'mean',
                   legend.label = 'Mean',
                   hatching.density = 15,
@@ -391,10 +387,8 @@ if(FALSE){
   htmlwidgets::saveWidget(adm3_unit_mean, file=paste0(map_dir,"RW_adm3_unit_mean.html"))
 
   ## unit-level admin-3 CI width
-  adm3_unit_CI_width <- prevMap.leaflet(res.obj =  examine.res$Unit$`Admin-3`,
-                                    gadm.shp = gadm.list.tmp[["Admin-3"]],
-                                    model.gadm.level = 3,
-                                    strata.gadm.level = 1,
+  adm3_unit_CI_width <- surveyPrev::prevMap.web(res.obj =  examine.res$Unit$`Admin-3`,
+                                    poly.shp = gadm.list.tmp[["Admin-3"]],
                                     value.to.plot = 'CI.width',
                                       legend.label = 'Width of <br>95% CI',
                                     hatching.density = 15,
@@ -406,10 +400,8 @@ if(FALSE){
   htmlwidgets::saveWidget(adm3_unit_CI_width, file=paste0(map_dir,"RW_adm3_unit_CI_width.html"))
 
   ## unit-level admin-3 CV width
-  adm3_unit_CV <- prevMap.leaflet(res.obj =  examine.res$Unit$`Admin-3`,
-                                        gadm.shp = gadm.list.tmp[["Admin-3"]],
-                                        model.gadm.level = 3,
-                                        strata.gadm.level = 1,
+  adm3_unit_CV <- surveyPrev::prevMap.web(res.obj =  examine.res$Unit$`Admin-3`,
+                                        poly.shp = gadm.list.tmp[["Admin-3"]],
                                         value.to.plot = 'cv',
                                         legend.label = 'Coefficient of <br> Variation',
                                         hatching.density = 15,
@@ -421,10 +413,8 @@ if(FALSE){
   htmlwidgets::saveWidget(adm3_unit_CV, file=paste0(map_dir,"RW_adm3_unit_CV.html"))
 
   ## unit-level exceedance probability
-  adm3_unit_exceed_prob <- prevMap.leaflet(res.obj =  examine.res$Unit$`Admin-3`,
-                                  gadm.shp = gadm.list.tmp[["Admin-3"]],
-                                  model.gadm.level = 3,
-                                  strata.gadm.level = 1,
+  adm3_unit_exceed_prob <- surveyPrev::prevMap.web(res.obj =  examine.res$Unit$`Admin-3`,
+                                  poly.shp = gadm.list.tmp[["Admin-3"]],
                                   value.to.plot = 'exceed_prob',
                                   legend.label = 'Exceedance <br> Probability',
                                   hatching.density = 15,
@@ -437,10 +427,8 @@ if(FALSE){
 
   # ridge plot
 
-  adm1_ridge <- posterior_ridge_plot(res.obj =  examine.res$Unit$'Admin-2',
+  adm1_ridge <- surveyPrev::ridgeprevPlot(res.obj =  examine.res$Unit$'Admin-2',
                                     plot.extreme.num=50, #plot.extreme.num=10
-                                    model.gadm.level = admin_to_num('Admin-2'),
-                                    strata.gadm.level = 1,
                                     legend.label = 'current modern conceptive usage (all women)',
                                     color.reverse= T,
                                     plot.format = c('Long','Wide')[1], # for extreme regions, side-by-side or long plot
@@ -449,10 +437,8 @@ if(FALSE){
 
 
   tmp.res <- examine.res$Unit$'Admin-3'
-  ridge_adm3_extremes <- posterior_ridge_plot(res.obj =  tmp.res,
+  ridge_adm3_extremes <- surveyPrev::ridgeprevPlot(res.obj =  tmp.res,
                                     plot.extreme.num=5, #plot.extreme.num=10
-                                    model.gadm.level = admin_to_num('Admin-3'),
-                                    strata.gadm.level = 1,
                                     legend.label = 'current modern conceptive usage (all women)',
                                     color.reverse= T,
                                     plot.format = c('Long','Wide')[1], # for extreme regions, side-by-side or long plot
@@ -505,10 +491,8 @@ if(FALSE){
   ## Map comparisons mean
 
   range_all_model <- c(0.24,0.46)
-  p1 <- prevMap.leaflet(res.obj =  examine.res$Direct$`Admin-1`,
-                        gadm.shp = gadm.list.tmp[["Admin-1"]],
-                        model.gadm.level = 1,
-                        strata.gadm.level = 1,
+  p1 <- surveyPrev::prevMap.web(res.obj =  examine.res$Direct$`Admin-1`,
+                        poly.shp = gadm.list.tmp[["Admin-1"]],
                         value.to.plot = 'mean',
                         legend.label = 'Mean',
                         hatching.density = 60,
@@ -524,10 +508,8 @@ if(FALSE){
 
 
 
-  p2 <- prevMap.leaflet(res.obj =  examine.res$Direct$`Admin-2`,
-                                      gadm.shp = gadm.list.tmp[["Admin-2"]],
-                                      model.gadm.level = 2,
-                                      strata.gadm.level = 1,
+  p2 <- surveyPrev::prevMap.web(res.obj =  examine.res$Direct$`Admin-2`,
+                                      poly.shp = gadm.list.tmp[["Admin-2"]],
                                       value.to.plot = 'mean',
                                       legend.label = 'Mean',
                                       hatching.density = 60,
@@ -541,10 +523,8 @@ if(FALSE){
                                                 'Admin-2',': ','Direct',
                                                 "</h4>"), position = "topright")
 
-  p3 <- prevMap.leaflet(res.obj =  examine.res$FH$`Admin-2`,
-                        gadm.shp = gadm.list.tmp[["Admin-2"]],
-                        model.gadm.level = 2,
-                        strata.gadm.level = 1,
+  p3 <- surveyPrev::prevMap.web(res.obj =  examine.res$FH$`Admin-2`,
+                        poly.shp = gadm.list.tmp[["Admin-2"]],
                         value.to.plot = 'mean',
                         legend.label = 'Mean',
                         hatching.density = 60,
@@ -558,10 +538,8 @@ if(FALSE){
                                                 'Admin-2',': ','Area-level',
                                                 "</h4>"), position = "topright")
 
-  p4 <- prevMap.leaflet(res.obj =  examine.res$Unit$`Admin-3`,
-                        gadm.shp = gadm.list.tmp[["Admin-3"]],
-                        model.gadm.level = 3,
-                        strata.gadm.level = 1,
+  p4 <- surveyPrev::prevMap.web(res.obj =  examine.res$Unit$`Admin-3`,
+                        poly.shp = gadm.list.tmp[["Admin-3"]],
                         value.to.plot = 'mean',
                         legend.label = 'Mean',
                         hatching.density = 60,
@@ -588,10 +566,8 @@ if(FALSE){
 
   ## Map comparisons admin-3
 
-  p1 <- prevMap.leaflet(res.obj =  examine.res$Unit$`Admin-3`,
-                        gadm.shp = gadm.list.tmp[["Admin-3"]],
-                        model.gadm.level = 3,
-                        strata.gadm.level = 1,
+  p1 <- surveyPrev::prevMap.web(res.obj =  examine.res$Unit$`Admin-3`,
+                        poly.shp = gadm.list.tmp[["Admin-3"]],
                         value.to.plot = 'mean',
                         legend.label = 'Mean',
                         hatching.density = 60,
@@ -602,10 +578,8 @@ if(FALSE){
 
 
 
-  p2 <- prevMap.leaflet(res.obj =  examine.res$Unit$`Admin-3`,
-                        gadm.shp = gadm.list.tmp[["Admin-3"]],
-                        model.gadm.level = 3,
-                        strata.gadm.level = 1,
+  p2 <- surveyPrev::prevMap.web(res.obj =  examine.res$Unit$`Admin-3`,
+                        poly.shp = gadm.list.tmp[["Admin-3"]],
                         value.to.plot = 'CI.width',
                         legend.label = 'Width of <br>95% CI',
                         hatching.density = 60,
@@ -615,10 +589,8 @@ if(FALSE){
                         legend.color.reverse=F)
 
 
-  p3 <- prevMap.leaflet(res.obj =  examine.res$Unit$`Admin-3`,
-                        gadm.shp = gadm.list.tmp[["Admin-3"]],
-                        model.gadm.level = 3,
-                        strata.gadm.level = 1,
+  p3 <- surveyPrev::prevMap.web(res.obj =  examine.res$Unit$`Admin-3`,
+                        poly.shp = gadm.list.tmp[["Admin-3"]],
                         value.to.plot = 'cv',
                         legend.label = 'Coefficient of <br> Variation',
                         hatching.density = 60,
@@ -628,10 +600,8 @@ if(FALSE){
                         legend.color.reverse=F)
 
 
-  p4 <- prevMap.leaflet(res.obj =  examine.res$Unit$`Admin-3`,
-                        gadm.shp = gadm.list.tmp[["Admin-3"]],
-                        model.gadm.level = 3,
-                        strata.gadm.level = 1,
+  p4 <- surveyPrev::prevMap.web(res.obj =  examine.res$Unit$`Admin-3`,
+                        poly.shp = gadm.list.tmp[["Admin-3"]],
                         value.to.plot = 'exceed_prob',
                         legend.label = 'Exceedance <br> Probability',
                         hatching.density = 60,

@@ -79,7 +79,7 @@ mod_DHS_API_est_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,parent_s
         "<p>",
         "We are constantly fixing survey specific issues to improve reliability. ",
         "If you encounter any discrepancies, please ",
-        tags$a("contact us", href = paste0("https://wu-thomas.github.io/surveyPrev_website/team/contact_us/"),
+        tags$a("contact us", href = paste0("https://sae4health.stat.uw.edu/team/contact_us/"),
                target = "_blank", class = "official-link"),
         " so we can investigate and refine our indicator coding.",
         "</p>",

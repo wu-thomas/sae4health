@@ -333,10 +333,8 @@ mod_res_visual_ridge_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
           tryCatch({
             message(paste0('preparing ridge plot (admin-1 type). Model: ',selected_adm, ', ',selected_method))
 
-            posterior_ridge_plot(res.obj = model_res_selected,
-                                         model.gadm.level= admin_to_num(selected_adm),
+            surveyPrev::ridgeprevPlot(res.obj = model_res_selected,
                                          plot.extreme.num=NA,
-                                         strata.gadm.level = CountryInfo$GADM_strata_level(),
                                          legend.label = 'Value',
                                          color.reverse= T) # how to name the extremes, top 10 bottom 10? need to change when close to 0 is bad for the indicator
 
@@ -382,11 +380,8 @@ mod_res_visual_ridge_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
 
           message(paste0('preparing ridge plot (admin-2 type). Model: ',selected_adm, ', ',selected_method))
 
-          tmp.plot <- posterior_ridge_plot(res.obj = model_res_selected,
-                               by.upper.adm.name = input$selected_upper_adm,
+          tmp.plot <- surveyPrev::ridgeprevPlot(res.obj = model_res_selected,
                                plot.extreme.num=NA,
-                               model.gadm.level= admin_to_num(selected_adm),
-                               strata.gadm.level = CountryInfo$GADM_strata_level(),
                                legend.label = 'Value',
                                color.reverse= T) # how to name the extremes, top 10 bottom 10? need to change when close to 0 is bad for the indicator
           tmp.plot
@@ -584,10 +579,8 @@ mod_res_visual_ridge_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
       tryCatch({
         message(paste0('preparing ridge plot (extremes). Model: ',selected_adm, ', ',selected_method))
 
-        posterior_ridge_plot(res.obj = model_res_selected,
+        surveyPrev::ridgeprevPlot(res.obj = model_res_selected,
                                                    plot.extreme.num = as.numeric(input$num_region_each), #plot.extreme.num=10
-                                                   model.gadm.level= admin_to_num(selected_adm),
-                                                   strata.gadm.level = CountryInfo$GADM_strata_level(),
                                                    legend.label = 'Value',
                                                    color.reverse= T,
                                                    plot.format = input$selected_format, # for extreme regions, side-by-side or long plot
