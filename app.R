@@ -5,7 +5,7 @@
 # library
 ######################
 library(sn) ## for INLA to run, just declare here with other packages
-library(labelled)
+library(labelled) ## requires version 2.12.0 or earlier
 library(naniar)
 library(sjlabelled)
 library(dplyr)

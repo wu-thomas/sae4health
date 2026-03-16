@@ -131,7 +131,7 @@ devtools::install_github("wu-thomas/sae4health")
 Processing the analysis dataset for indicators, using specific coding schemes and handling labels, requires the following libraries to be **preloaded** before running the app:  
 
 ```{r, eval=F, echo=T}
-library(labelled)
+library(labelled) ## requires version 2.12.0 or earlier
 library(naniar)
 library(sjlabelled)
 library(dplyr)

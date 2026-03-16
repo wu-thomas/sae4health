@@ -99,7 +99,7 @@ schemes and handling labels, requires the following libraries to be
 **preloaded** before running the app:
 
 ``` r
-library(labelled)
+library(labelled) ## requires version 2.12.0 or earlier
 library(naniar)
 library(sjlabelled)
 library(dplyr)
