@@ -381,7 +381,7 @@ mod_res_visual_ridge_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
           message(paste0('preparing ridge plot (admin-2 type). Model: ',selected_adm, ', ',selected_method))
 
           tmp.plot <- surveyPrev::ridgeprevPlot(res.obj = model_res_selected,
-                               admin1.focus = input$selected_upper_adm
+                               admin1.focus = input$selected_upper_adm,
                                plot.extreme.num=NA,
                                legend.label = 'Value',
                                color.reverse= T) # how to name the extremes, top 10 bottom 10? need to change when close to 0 is bad for the indicator
