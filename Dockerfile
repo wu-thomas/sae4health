@@ -1,4 +1,4 @@
-FROM rocker/shiny:4.4.3
+FROM rocker/shiny:4.4
 
 ENV DEBIAN_FRONTEND=noninteractive
 
