@@ -27,7 +27,7 @@ cluster_admin_info <- function(cluster.geo,
   }
 
   ### determine whether the gadm level is finer than stratification level
-  if(model.gadm.level > strat.gadm.level){pseudo_level=2}else{pseudo_level=1}
+  if(model.gadm.level > strat.gadm.level){pseudo_level=1}else{pseudo_level=1}
 
   ###############################################################
   ### National level analysis

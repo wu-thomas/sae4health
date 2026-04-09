@@ -124,6 +124,15 @@ showNoDataModal <- function() {
   ))
 }
 
+showNoIndicatorModal <- function() {
+  showModal(modalDialog(
+    title = "Indicator Not Collected in this Country & Year",
+    "Please choose a different indicator, year, or country.",
+    easyClose = TRUE,
+    footer = modalButton("OK")
+  ))
+}
+
 
 showNoRecodeModal <- function(recode=NULL,Svy_indicator=NULL) {
   showModal(modalDialog(

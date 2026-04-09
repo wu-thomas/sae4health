@@ -555,6 +555,13 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
       }
 
       req(CountryInfo$svy_analysis_dat())
+      
+      ### pop-up window if indicator is unavailable
+      analysis.dat <- CountryInfo$svy_analysis_dat()
+      if(length(which(!is.na(analysis.dat$value)))==0){
+        showNoIndicatorModal()
+        return()
+      }
 
 
       ###############################################
