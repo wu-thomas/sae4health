@@ -82,11 +82,13 @@ app_server <- function(input, output, session) {
   mod_result_tabulate_server("result_tabulate_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo)
   mod_report_preparation_server("report_preparation_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo)
 
-  mod_res_visual_prev_map_server("res_visual_prev_map_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo)
+  mod_res_visual_prev_map_by_state_server("res_visual_prev_map_by_state_1", CountryInfo = CountryInfo, AnalysisInfo = AnalysisInfo)
   mod_res_visual_multiple_maps_server("res_visual_multiple_maps_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo)
 
   mod_res_visual_scatter_server("res_visual_scatter_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo)
   mod_res_visual_ridge_server("res_visual_ridge_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo)
+  mod_rankings_caterpillar_server("rankings_caterpillar_1",CountryInfo = CountryInfo,AnalysisInfo = AnalysisInfo,MetaInfo = MetaInfo)
+  mod_res_visual_interval_compare_server("res_visual_interval_compare_1",CountryInfo = CountryInfo,AnalysisInfo = AnalysisInfo,MetaInfo = MetaInfo)
 
   mod_indicator_in_app_server("indicator_in_app_1", CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo,parent_session=session)
   mod_indicator_dictionary_server("indicator_dictionary_1", CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo,parent_session=session)

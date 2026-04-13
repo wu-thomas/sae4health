@@ -592,7 +592,8 @@ sample_info_map_static <-function(model.gadm.level,
     adm.sf <- gadm.list.visual[[paste0('Admin-',model.gadm.level)]]
 
     adm.sf$region.name <- adm.sf[[paste0("NAME_",model.gadm.level)]]
-    adm.sf$upper.adm.name <- adm.sf[[paste0("NAME_",model.gadm.level-1)]]
+    #adm.sf$upper.adm.name <- adm.sf[[paste0("NAME_",model.gadm.level-2)]]
+    adm.sf$upper.adm.name <- adm.sf[["NAME_1"]]
 
     adm.sf <- adm.sf %>%
       dplyr::mutate(admin2.name.full = paste0(upper.adm.name, "_", region.name))

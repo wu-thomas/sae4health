@@ -555,6 +555,13 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
       }
 
       req(CountryInfo$svy_analysis_dat())
+      
+      ### pop-up window if indicator is unavailable
+      analysis.dat <- CountryInfo$svy_analysis_dat()
+      if(length(which(!is.na(analysis.dat$value)))==0){
+        showNoIndicatorModal()
+        return()
+      }
 
 
       ###############################################
@@ -1362,16 +1369,18 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
 
                 #R.utils::withTimeout({
                 tmp.res <- suppressWarnings(fit_svy_model(cluster.geo= CountryInfo$svy_GPS_dat(),
-                                                          cluster.admin.info = tmp.geo.info,
+                                                          #cluster.admin.info = tmp.geo.info,
                                                           gadm.list = CountryInfo$GADM_list(),
                                                           analysis.dat =   CountryInfo$svy_analysis_dat(),
                                                           model.gadm.level = tmp.adm.num,
-                                                          strat.gadm.level = strat.gadm.level,
+                                                          #strat.gadm.level = strat.gadm.level,
+                                                          strat.gadm.level = CountryInfo$GADM_strata_level(),
                                                           method = tmp.method,
-                                                          aggregation =T,
-                                                          svy.strata = svy.strata,
-                                                          nested=AnalysisInfo$get_ad_options('nested'),
-                                                          area_cov_frame = cov_mat_list[[tmp.adm]]))
+                                                          aggregation =T
+                                                          #svy.strata = svy.strata,
+                                                          #nested=AnalysisInfo$get_ad_options('nested'),
+                                                          #area_cov_frame = cov_mat_list[[tmp.adm]]
+                                            ))
                 #}, timeout = 300) ### 5 minutes for timeout
               },error = function(e) {
                 tmp.tracker.list$status <<- 'Unsuccessful'
@@ -1535,16 +1544,18 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
 
                 #R.utils::withTimeout({
                 tmp.res <- suppressWarnings(fit_svy_model(cluster.geo= CountryInfo$svy_GPS_dat(),
-                                                          cluster.admin.info = tmp.geo.info,
+                                                          #cluster.admin.info = tmp.geo.info,
                                                           gadm.list = CountryInfo$GADM_list(),
                                                           analysis.dat =   CountryInfo$svy_analysis_dat(),
                                                           model.gadm.level = tmp.adm.num,
-                                                          strat.gadm.level = strat.gadm.level,
+                                                          #strat.gadm.level = strat.gadm.level,
+                                                          strat.gadm.level = CountryInfo$GADM_strata_level(),
                                                           method = tmp.method,
-                                                          aggregation =T,
-                                                          svy.strata = svy.strata,
-                                                          nested=AnalysisInfo$get_ad_options('nested'),
-                                                          area_cov_frame = cov_mat_list[[tmp.adm]]))
+                                                          aggregation =T
+                                                          #svy.strata = svy.strata,
+                                                          #nested=AnalysisInfo$get_ad_options('nested'),
+                                                          #area_cov_frame = cov_mat_list[[tmp.adm]]
+                ))
                 #}, timeout = 300) ### 5 minutes for timeout
               },error = function(e) {
                 tmp.tracker.list$status <<- 'Unsuccessful'

@@ -90,10 +90,12 @@ app_ui <- function(request) {
                                          shinydashboard::menuItem("Data Upload", tabName = "data_upload", icon = icon("database")),
                                       shinydashboard::menuItem("Model Fitting", tabName = "model_fit", icon = icon("sliders-h")),
                                       shinydashboard::menuItem("Result Visualization", tabName = "res_visual", icon = icon("earth"),
-                                       shinydashboard::menuSubItem(HTML("&nbsp &nbsp &nbsp &nbsp Prevalence Map"), tabName = "res_prev_map",icon = NULL),
+                                       shinydashboard::menuSubItem(HTML("&nbsp &nbsp &nbsp &nbsp Prevalence Map"), tabName = "res_prev_adm1_map",icon = NULL),
                                        shinydashboard::menuSubItem(HTML("&nbsp &nbsp &nbsp &nbsp Map Comparison"), tabName = "res_compare_map",icon = NULL),
                                        shinydashboard::menuSubItem(HTML("&nbsp &nbsp &nbsp &nbsp Scatter Plot"), tabName = "res_scatter",icon = NULL),
-                                       shinydashboard::menuSubItem(HTML("&nbsp &nbsp &nbsp &nbsp Ridge Plot"), tabName = "res_ridge",icon = NULL)),
+                                       shinydashboard::menuSubItem(HTML("&nbsp &nbsp &nbsp &nbsp Ridge Plot"), tabName = "res_ridge",icon = NULL),
+                                       shinydashboard::menuSubItem(HTML("&nbsp &nbsp &nbsp &nbsp Ranking Plot"), tabName = "res_rankings",icon = NULL),
+                                       shinydashboard::menuSubItem(HTML("&nbsp &nbsp &nbsp &nbsp Interval Comparison"), tabName = "res_compare_interval",icon = NULL)),
                                       shinydashboard::menuItem("Result Tabulation", tabName = "res_tab", icon = icon("line-chart")),
                                       shinydashboard::menuItem(HTML("&nbsp Report Generation"), tabName = "report_tab", icon = icon("print")),
                                       shinydashboard::menuItem(HTML("&nbsp More Instructions"), tabName = "get_start", icon = icon("home")),
@@ -138,14 +140,18 @@ app_ui <- function(request) {
           shinydashboard::tabItem(tabName = "res_tab",
                   mod_result_tabulate_ui("result_tabulate_1")),
           # Adding individual content for each subtab
-          shinydashboard::tabItem(tabName = "res_prev_map",
-                  mod_res_visual_prev_map_ui("res_visual_prev_map_1")), # Content for Prev Map subtab
+          shinydashboard::tabItem(tabName = "res_prev_adm1_map",
+                  mod_res_visual_prev_map_by_state_ui("res_visual_prev_map_by_state_1")), # Content for Admin1 Prev Map subtab
           shinydashboard::tabItem(tabName = "res_compare_map",
                   mod_res_visual_multiple_maps_ui("res_visual_multiple_maps_1")), # Content for Map Comparison subtab
           shinydashboard::tabItem(tabName = "res_scatter",
                   mod_res_visual_scatter_ui("res_visual_scatter_1")), # Content for Comparison Scatter subtab
           shinydashboard::tabItem(tabName = "res_ridge",
                   mod_res_visual_ridge_ui("res_visual_ridge_1")), # Content for ridge plot subtab
+          shinydashboard::tabItem(tabName = "res_rankings",
+                  mod_rankings_caterpillar_ui("rankings_caterpillar_1")), # Content for rankings plot subtab
+          shinydashboard::tabItem(tabName = "res_compare_interval",
+                  mod_res_visual_interval_compare_ui("res_visual_interval_compare_1")), # Content for rankings plot subtab
           shinydashboard::tabItem(tabName = "report_tab",
                   mod_report_preparation_ui("report_preparation_1")), # Report generation
           shinydashboard::tabItem(tabName = "indicator_in_app",
