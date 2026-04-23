@@ -5,6 +5,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
+    curl \
     g++ \
     gdal-bin \
     git \
@@ -22,6 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     libtiff5-dev \
     libudunits2-dev \
+    libuv1-dev \
     libxml2-dev \
     make \
     pandoc \
