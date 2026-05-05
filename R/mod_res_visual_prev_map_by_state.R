@@ -409,17 +409,45 @@ mod_res_visual_prev_map_by_state_server <- function(id, CountryInfo, AnalysisInf
       ))
     })
     
+    # output$choose_prob <- renderUI({
+    #   req(input$selected_measure)
+    #   
+    #   if (input$selected_measure == "exceed_prob") {
+    #     shinyWidgets::sliderTextInput(
+    #       inputId = ns("selected_threshold"),
+    #       label = "Choose Exceedance Threshold",
+    #       choices = as.character(seq(0, 1, by = 0.05)),
+    #       selected = "0.20",
+    #       grid = TRUE,
+    #       width = "100%"
+    #     )
+    #   } else {
+    #     NULL
+    #   }
+    # })
+    
     output$choose_prob <- renderUI({
       req(input$selected_measure)
       
       if (input$selected_measure == "exceed_prob") {
-        shinyWidgets::sliderTextInput(
-          inputId = ns("selected_threshold"),
-          label = "Choose Exceedance Threshold",
-          choices = as.character(seq(0, 1, by = 0.05)),
-          selected = "0.20",
-          grid = TRUE,
-          width = "100%"
+        
+        tmp.natl.res <- AnalysisInfo$Natl_res()
+        
+        if (!is.null(tmp.natl.res) && !is.null(tmp.natl.res$direct.est)) {
+          initial.val <- round(as.numeric(tmp.natl.res$direct.est), digits = 2)
+        } else {
+          initial.val <- 0.50
+        }
+        
+        initial.val <- min(max(initial.val, 0), 1)
+        
+        sliderInput(
+          ns("selected_threshold"),
+          "Select Threshold",
+          min = 0,
+          max = 1,
+          value = initial.val,
+          step = 0.01
         )
       } else {
         NULL
@@ -432,7 +460,16 @@ mod_res_visual_prev_map_by_state_server <- function(id, CountryInfo, AnalysisInf
       
       selected_adm <- input$selected_adm
       selected_focus <- input$selected_focus
-      selected_measure <- input$selected_measure
+      selected_measure_code <- input$selected_measure
+      
+      measure_labels <- c(
+        "mean" = "Mean",
+        "cv" = "Coefficient of Variation",
+        "CI.width" = "Width of 95% Credible Interval",
+        "exceed_prob" = "Exceedance Probability"
+      )
+      
+      selected_measure <- measure_labels[[selected_measure_code]] %||% selected_measure_code
       method_des <- method_label()
       
       model_res_selected <- tryCatch(
