@@ -139,6 +139,10 @@ mod_model_selection_ui <- function(id){
                           div(style = "width: 100%; max-width: 800px;margin-top:10px;",
                               h4("Model Selection", class = "panel-title"),
                               column(12,
+                                     div(style = "display: flex; justify-content: flex-start; margin-bottom: 10px;",
+                                         actionButton(ns("select_all_models"), "Select all", class = "btn btn-sm btn-primary"))
+                              ),
+                              column(12,
                                      div(DT::DTOutput(ns('checkboxTable')), class = "model-checkbox-table"),
                               )
                           )),
@@ -190,9 +194,18 @@ mod_model_selection_ui <- function(id){
                                 #div(DT::DTOutput(ns('Selected_Res_Tracker_Table')),class = "model-checkbox-table"),
                                 column(12,
                                        div(DT::DTOutput(ns('Res_Status')),class = "model-checkbox-table",
-                                           style = "margin-bottom:80px;")
+                                           style = "margin-bottom:30px;")
                                 )
 
+                              ),
+                              fluidRow(
+                                div(style = "width: 100%; max-width: 800px;",
+                                    tags$hr(class="gradient-hr"),
+                                    h4("Download Fitted Model Object", class = "panel-title"),
+                                    column(12,
+                                           uiOutput(ns("download_model_object_ui"))
+                                    )
+                                )
                               )
                           ))
 
@@ -496,6 +509,25 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
       if (is.null(selected) || !selected) {
         #message('reselect national')
         updateCheckboxInput(session, "cb_1_1", value = T)
+      }
+    })
+
+    ### select all choosable model/admin combinations
+    observeEvent(input$select_all_models, {
+      req(col_names())
+
+      for (i in seq_len(nrows)) {
+        for (j in seq_len(ncols())) {
+          tmp.method <- row_names[i]
+          tmp.adm <- col_names()[j]
+
+          ### FH and Unit-level models are not choosable at the National level
+          if (tmp.adm == "National" && tmp.method %in% c("FH", "Unit")) {
+            next
+          }
+
+          updateCheckboxInput(session, paste0("cb_", i, "_", j), value = TRUE)
+        }
       }
     })
 
@@ -1241,6 +1273,115 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
         tmp_cov_adm_template <- as.data.frame(tmp.geo.info$admin.info$data[,adm_colname])
         colnames(tmp_cov_adm_template) <- adm_colname
         readr::write_csv(tmp_cov_adm_template, file)
+      }
+    )
+
+
+    ###############################################################
+    ### download fitted model object
+    ###############################################################
+
+    fitted_model_object <- reactive({
+      req(input$download_model_method)
+      req(input$download_model_admin)
+
+      fitted_list <- AnalysisInfo$model_res_list()
+      if (is.null(fitted_list)) {
+        return(NULL)
+      }
+
+      tmp.model <- fitted_list[[input$download_model_method]][[input$download_model_admin]]
+      if (is.null(tmp.model)) {
+        return(NULL)
+      }
+
+      tmp.model
+    })
+
+    output$download_model_object_ui <- renderUI({
+      req(col_names())
+
+      tagList(
+        tags$p(
+          "(Optional - not required)",
+          style = "font-size: large; margin-bottom: 12px;"
+        ),
+        fluidRow(
+          column(6,
+                 selectInput(
+                   inputId = ns("download_model_method"),
+                   label = "Model Type:",
+                   choices = stats::setNames(row_names, method_names),
+                   selected = row_names[1],
+                   width = "100%"
+                 )
+          ),
+          column(6,
+                 selectInput(
+                   inputId = ns("download_model_admin"),
+                   label = "Admin Area:",
+                   choices = col_names(),
+                   selected = col_names()[1],
+                   width = "100%"
+                 )
+          )
+        ),
+        uiOutput(ns("download_model_object_status"))
+      )
+    })
+
+    output$download_model_object_status <- renderUI({
+      req(input$download_model_method)
+      req(input$download_model_admin)
+
+      tmp.method <- input$download_model_method
+      tmp.adm <- input$download_model_admin
+      tmp.method.display <- method_names[match(tmp.method, row_names)]
+
+      ### FH and Unit-level models are not valid at the National level in the selection table.
+      if (tmp.adm == "National" && tmp.method %in% c("FH", "Unit")) {
+        return(tags$div(
+          style = "font-size: large; color: #666; margin-top: 10px; margin-bottom: 30px;",
+          paste0(tmp.method.display, " is not available at the National level.")
+        ))
+      }
+
+      tmp.model <- fitted_model_object()
+
+      if (is.null(tmp.model)) {
+        return(tags$div(
+          style = "font-size: large; color: #b36b00; margin-top: 10px; margin-bottom: 30px;",
+          paste0("No fitted model object is currently available for ", tmp.method.display, " at ", tmp.adm, ".")
+        ))
+      }
+
+      tagList(
+        tags$div(
+          style = "font-size: large; color: green; margin-top: 10px; margin-bottom: 12px;",
+          paste0("A fitted model object is available for ", tmp.method.display, " at ", tmp.adm, ".")
+        ),
+        downloadButton(ns("download_model_object"), "Download Model Object", icon = icon("download"), class = "btn-primary"),
+        tags$div(style = "margin-bottom: 30px;")
+      )
+    })
+
+    output$download_model_object <- downloadHandler(
+      filename = function() {
+        tmp.method <- input$download_model_method
+        tmp.adm <- input$download_model_admin
+        tmp.country <- CountryInfo$country()
+        tmp.year <- CountryInfo$svyYear_selected()
+        tmp.indicator <- CountryInfo$svy_indicator_var()
+
+        file.prefix <- paste(tmp.country, tmp.year, tmp.indicator, tmp.method, tmp.adm, "model_object", sep = "_")
+        file.prefix <- gsub("[^A-Za-z0-9_]+", "_", file.prefix)
+
+        paste0(file.prefix, ".rds")
+      },
+      content = function(file) {
+        tmp.model <- fitted_model_object()
+        validate(need(!is.null(tmp.model), "No fitted model object is available for download."))
+        saveRDS(tmp.model, file = file)
       }
     )
 
