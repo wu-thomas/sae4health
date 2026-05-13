@@ -1,0 +1,14 @@
+.git
+.gitignore
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user
+.DS_Store
+*.tar.gz
+*.html
+clusterInfo.RData
+renv/staging
+renv/python
+tests/testthat/_snaps
+tmp
