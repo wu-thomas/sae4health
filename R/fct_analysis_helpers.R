@@ -594,12 +594,13 @@ fit_svy_model <- function(cluster.geo,
           message((length(bad_admins)/dim((res_direct$res.admin1)[1])))
           stop("More than 25% of regions do not have valid direct estimates.") #25%
         }
+      
+      }  
 
-        bad_clusters <- subset(cluster.info$data, admin1.name %in% bad_admins)$cluster
+      bad_clusters <- c(subset(cluster.info$data, admin1.name %in% bad_admins)$cluster,
+                          subset(cluster.info$data, is.na(admin1.name))$cluster)
 
-        updated.analysis.dat <-subset(analysis.dat, !cluster %in% bad_clusters)
-
-      }
+      updated.analysis.dat <-subset(analysis.dat, !cluster %in% bad_clusters)
 
 
       res_adm <- surveyPrev::fhModel(data= updated.analysis.dat,
@@ -627,13 +628,15 @@ fit_svy_model <- function(cluster.geo,
           message((length(bad_admins)/dim((res_direct$res.admin2)[1])))
           stop("More than 25% of regions do not have valid direct estimates.") #25%
         }
+      }
 
-        bad_clusters <- subset(cluster.info$data, admin2.name.full %in% bad_admins)$cluster
+      bad_clusters <- c(subset(cluster.info$data, admin2.name.full %in% bad_admins)$cluster,
+                          subset(cluster.info$data, is.na(admin1.name))$cluster)
 
 
 
-        #message(bad_clusters)
-        updated.analysis.dat <-subset(analysis.dat, !cluster %in% bad_clusters)
+      #message(bad_clusters)
+      updated.analysis.dat <-subset(analysis.dat, !cluster %in% bad_clusters)
 
         #manually adjust only PSU, remove
         #updated.analysis.dat <- updated.analysis.dat %>%
@@ -641,7 +644,7 @@ fit_svy_model <- function(cluster.geo,
         #  dplyr::filter(dplyr::n_distinct(cluster) > 1) %>%
         #  dplyr::ungroup()
 
-      }
+      
 
       ### fit FH model
       #options(survey.lonely.psu="remove")
