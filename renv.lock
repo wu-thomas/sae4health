@@ -102,7 +102,7 @@
     },
     "INLA": {
       "Package": "INLA",
-      "Version": "25.04.16",
+      "Version": "25.12.16",
       "Source": "Repository",
       "Type": "Package",
       "Title": "Full Bayesian Analysis of Latent Gaussian Models using Integrated Nested Laplace Approximations",
