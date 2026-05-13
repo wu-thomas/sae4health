@@ -36,8 +36,7 @@ COPY renv.lock renv.lock
 COPY renv renv
 
 RUN R -e "install.packages('renv', repos = 'https://cloud.r-project.org')" \
-    && R -e "renv::restore(lockfile = '/srv/shiny-server/renv.lock',exclude = 'INLA', prompt = FALSE)"\
-    && R -e "install.packages('INLA', repos = c(INLA = 'https://inla.r-inla-download.org/R/testing', CRAN = 'https://packagemanager.posit.co/cran/latest'), type = 'source')"
+    && R -e "renv::restore(lockfile = '/srv/shiny-server/renv.lock', prompt = FALSE)"
 
 COPY . .
 
