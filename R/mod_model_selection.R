@@ -298,7 +298,87 @@ mod_model_selection_ui <- function(id){
                                 ))
                               }
                             }
-                  ))
+                  )),
+               ###############################################################
+               ### Model Log tab: shows the equivalent R code and console
+               ### output produced during data sparsity checks and model
+               ### fitting. Acts as a reproducible record of the analysis.
+               ###############################################################
+               tabPanel(
+                 title = "Model Log",
+                 div(
+                   style = "max-width: 1200px; margin-top: 10px;",
+                   h4("Reproducible R code and console output", class = "panel-title"),
+                   div(
+                     style = "font-size: 15px; margin-bottom: 10px;",
+                     HTML(paste0(
+                       "<p>This panel shows a transcript of what would appear in the R console ",
+                       "if you ran the equivalent <code>surveyPrev</code> workflow yourself, ",
+                       "including the function calls dispatched by the app (prefixed with ",
+                       "<code>&gt;</code>) and any messages, warnings or errors produced ",
+                       "while running the <strong>Data Sparsity Check</strong> and ",
+                       "<strong>Model Fitting</strong> steps in the ",
+                       "<em>Model Implementation</em> tab.</p>",
+                       "<p>The log is appended to as you use the app; use the buttons below ",
+                       "to copy, download, or clear it. The log resets when you change ",
+                       "country, survey year, or indicator.</p>"
+                     ))
+                   ),
+                   div(
+                     style = "display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;",
+                     actionButton(ns("model_log_clear"),
+                                  label = span(icon("trash"), " Clear Log"),
+                                  class = "btn btn-sm btn-warning"),
+                     actionButton(ns("model_log_copy"),
+                                  label = span(icon("copy"), " Copy to Clipboard"),
+                                  class = "btn btn-sm btn-primary"),
+                     downloadButton(ns("model_log_download"),
+                                    label = "Download Log",
+                                    icon = icon("download"),
+                                    class = "btn btn-sm btn-primary")
+                   ),
+                   tags$head(tags$style(HTML("
+                     .model-log-console {
+                       background-color: #1e1e1e;
+                       color: #e6e6e6;
+                       font-family: 'Courier New', Consolas, Monaco, monospace;
+                       font-size: 13px;
+                       line-height: 1.45;
+                       padding: 14px;
+                       border-radius: 6px;
+                       border: 1px solid #444;
+                       max-height: 600px;
+                       overflow: auto;
+                       white-space: pre-wrap;
+                       word-wrap: break-word;
+                     }
+                     .model-log-console .log-prompt   { color: #4ec9b0; font-weight: bold; }
+                     .model-log-console .log-code     { color: #dcdcaa; }
+                     .model-log-console .log-output   { color: #d4d4d4; }
+                     .model-log-console .log-message  { color: #9cdcfe; font-style: italic; }
+                     .model-log-console .log-warning  { color: #ffcc66; }
+                     .model-log-console .log-error    { color: #f48771; }
+                     .model-log-console .log-section  { color: #c586c0; font-weight: bold; }
+                     .model-log-console .log-time     { color: #808080; }
+                   "))),
+                   tags$script(HTML(sprintf("
+                     Shiny.addCustomMessageHandler('%s', function(text) {
+                       var ta = document.createElement('textarea');
+                       ta.value = text;
+                       ta.style.position = 'fixed';
+                       ta.style.opacity = '0';
+                       document.body.appendChild(ta);
+                       ta.select();
+                       try { document.execCommand('copy'); } catch (e) {}
+                       document.body.removeChild(ta);
+                     });
+                   ", ns("model_log_copy_msg")))),
+                   div(id = ns("model_log_console_wrap"),
+                       class = "model-log-console",
+                       htmlOutput(ns("model_log_console"))
+                   )
+                 )
+               )
                )
     )
 
@@ -347,6 +427,166 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
 
     adm.05.strata.country <- c('DOM','COD','TZA','KEN')
     method_names <- c('Direct Estimates','Area-level Model','Unit-level Model')
+
+    ###############################################################
+    ### Model Log infrastructure
+    ###
+    ### Stores a running transcript of "what the user would see in the
+    ### R console" if they ran the equivalent surveyPrev workflow by
+    ### hand. Each entry is a list(class, text) so the UI can colour it
+    ### (code lines vs output vs warning vs error).
+    ###############################################################
+
+    model_log <- reactiveVal(list())
+
+    ## helper: escape HTML for safe display inside <pre>
+    .escape_html <- function(x) {
+      if (length(x) == 0) return("")
+      x <- as.character(x)
+      x <- gsub("&", "&amp;",  x, fixed = TRUE)
+      x <- gsub("<", "&lt;",   x, fixed = TRUE)
+      x <- gsub(">", "&gt;",   x, fixed = TRUE)
+      x
+    }
+
+    ## append one or more lines to the log under a given class.
+    ## class is one of: "section", "code", "output", "message",
+    ## "warning", "error".
+    append_log <- function(text, class = "output") {
+      if (length(text) == 0) return(invisible())
+      lines <- unlist(strsplit(as.character(text), "\n", fixed = TRUE),
+                      use.names = FALSE)
+      lines <- lines[nzchar(lines) | class %in% c("output", "code")]
+      if (length(lines) == 0) return(invisible())
+      cur <- model_log()
+      stamp <- format(Sys.time(), "%H:%M:%S")
+      new_entries <- lapply(lines, function(ln) {
+        list(class = class, time = stamp, text = ln)
+      })
+      model_log(c(cur, new_entries))
+      invisible()
+    }
+
+    ## helper: log a block of R code (one or many lines), prefixing the
+    ## first line with "> " and continuation lines with "+ " just like
+    ## the R REPL.
+    append_code <- function(code) {
+      code_str <- paste(code, collapse = "\n")
+      lines <- unlist(strsplit(code_str, "\n", fixed = TRUE),
+                      use.names = FALSE)
+      if (length(lines) == 0) return(invisible())
+      prefixed <- character(length(lines))
+      prefixed[1] <- paste0("> ", lines[1])
+      if (length(lines) > 1) {
+        prefixed[-1] <- paste0("+ ", lines[-1])
+      }
+      append_log(prefixed, class = "code")
+    }
+
+    ## helper: log a section header (e.g. "==== Data Sparsity Check ====")
+    append_section <- function(title) {
+      bar <- paste(rep("=", max(8, 60 - nchar(title))), collapse = "")
+      append_log("", class = "output")
+      append_log(paste0("# ", bar, " ", title, " ", bar),
+                 class = "section")
+    }
+
+    ## helper: run an expression while capturing any message()/warning()
+    ## output produced and teeing it into the log. The expression still
+    ## runs normally (messages still propagate to the R console / shiny
+    ## log) so existing behaviour is preserved.
+    with_log_capture <- function(expr) {
+      env <- parent.frame()
+      withCallingHandlers(
+        eval(substitute(expr), envir = env),
+        message = function(m) {
+          msg <- conditionMessage(m)
+          msg <- sub("\n$", "", msg)
+          append_log(msg, class = "message")
+        },
+        warning = function(w) {
+          append_log(paste0("Warning message:\n  ", conditionMessage(w)),
+                     class = "warning")
+        }
+      )
+    }
+
+    ## helper: build the R code string that mirrors a fit_svy_model() /
+    ## directEST / fhModel / clusterModel call for a given method + admin
+    ## level. The strings are illustrative (variable names match those
+    ## used in the surveyPrev workflow) and serve as a reproducible
+    ## recipe the user can paste into their own R session.
+    build_model_code <- function(method, adm_level, adm_num,
+                                 strat_level, country_iso3,
+                                 indicator_var, svy_year) {
+      strat_arg <- if (!is.null(strat_level) && length(strat_level) > 0 &&
+                       !is.na(strat_level)) {
+        paste0(", strat.gadm.level = ", strat_level)
+      } else ""
+
+      preamble <- c(
+        paste0("# --- ", method_names[match(method, c('Direct','FH','Unit'))],
+               " at ", adm_level,
+               " (", country_iso3,
+               if (!is.null(svy_year)) paste0(", ", svy_year) else "",
+               ", indicator: ", indicator_var, ") ---")
+      )
+
+      common <- c(
+        "cluster.info <- surveyPrev::clusterInfo(",
+        "  geo              = cluster.geo,",
+        "  poly.adm1        = gadm.list[['Admin-1']],",
+        paste0("  poly.adm2        = gadm.list[['Admin-", max(adm_num, 1), "']])")
+      )
+
+      body <- switch(
+        method,
+        "Direct" = c(
+          "res <- surveyPrev::directEST(",
+          "  data              = analysis.dat,",
+          "  cluster.info      = cluster.info,",
+          paste0("  admin             = ", adm_num, strat_arg, ",  # 0 = National"),
+          "  aggregation       = TRUE)",
+          "summary(res$res.admin)"
+        ),
+        "FH" = c(
+          "admin.info <- surveyPrev::adminInfo(",
+          paste0("  poly.adm        = gadm.list[['Admin-", adm_num, "']],"),
+          paste0("  admin           = ", adm_num, ",  # admin level"),
+          "  by.adm          = paste0('NAME_', ", adm_num, "))",
+          "res <- surveyPrev::fhModel(",
+          "  data              = analysis.dat,",
+          "  cluster.info      = cluster.info,",
+          "  admin.info        = admin.info,",
+          paste0("  admin             = ", adm_num, strat_arg, ","),
+          "  aggregation       = TRUE,",
+          "  CI                = 0.95)",
+          "summary(res$res.admin)"
+        ),
+        "Unit" = c(
+          "admin.info <- surveyPrev::adminInfo(",
+          paste0("  poly.adm        = gadm.list[['Admin-", adm_num, "']],"),
+          paste0("  admin           = ", adm_num, ","),
+          "  by.adm          = paste0('NAME_', ", adm_num, "))",
+          "res <- surveyPrev::clusterModel(",
+          "  data              = analysis.dat,",
+          "  cluster.info      = cluster.info,",
+          "  admin.info        = admin.info,",
+          paste0("  admin             = ", adm_num, strat_arg, ","),
+          "  aggregation       = TRUE,",
+          "  CI                = 0.95)",
+          "summary(res$res.admin)"
+        ),
+        ## fallback for unknown method
+        c(paste0("# unsupported method: ", method))
+      )
+
+      c(preamble, common, body)
+    }
+
+    ## NOTE: the log is also reset when the user changes country / year
+    ## / indicator -- that observer is registered further below, right
+    ## after `meta_snapshot` itself is defined.
 
     ###############################################################
     ### text instructions on model selection
@@ -441,6 +681,11 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
       AnalysisInfo$model_screen_list(NULL)
 
     })
+
+    ### reset the Model Log too when the user changes country / year / indicator
+    observeEvent(meta_snapshot(), {
+      model_log(list())
+    }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
 
 
@@ -595,6 +840,20 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
         return()
       }
 
+      ### Model log: open a Data Sparsity Check section
+      append_section("Data Sparsity Check")
+      append_log(paste0("# Country: ", CountryInfo$country(),
+                        " | Survey year: ", CountryInfo$svyYear_selected(),
+                        " | Indicator: ", CountryInfo$svy_indicator_var()),
+                 class = "output")
+      append_code(c(
+        "# Build a cluster + admin info object for the selected admin levels",
+        "cluster.info <- surveyPrev::clusterInfo(",
+        "  geo       = cluster.geo,",
+        "  poly.adm1 = gadm.list[['Admin-1']],",
+        "  poly.adm2 = gadm.list[['Admin-2']])"
+      ))
+
 
       ###############################################
       ### assigning cluster and admin information
@@ -738,6 +997,32 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
 
             ### store model results
             AnalysisInfo$set_screen_Check(tmp.method,tmp.adm,tmp.check.model)
+
+            ### Model log: record screening outcome for this cell
+            append_code(paste0(
+              "screen_svy_model(method = '", tmp.method,
+              "', model.gadm.level = ", tmp.adm.num, ")"
+            ))
+            .screen_flag <- tmp.check.model$screen.flag
+            .screen_msg  <- tmp.check.model$screen.message
+            if (is.null(.screen_msg)) .screen_msg <- ""
+            if (identical(.screen_flag, "Pass")) {
+              append_log(paste0("[", tmp.adm, " / ", tmp.method,
+                                "] Passed sparsity check."), class = "output")
+            } else if (identical(.screen_flag, "Warning")) {
+              append_log(paste0("[", tmp.adm, " / ", tmp.method,
+                                "] Warning: ", .screen_msg),
+                         class = "warning")
+            } else if (identical(.screen_flag, "Error")) {
+              append_log(paste0("[", tmp.adm, " / ", tmp.method,
+                                "] Error: ", .screen_msg),
+                         class = "error")
+            } else {
+              append_log(paste0("[", tmp.adm, " / ", tmp.method,
+                                "] Flag: ", as.character(.screen_flag),
+                                if (nzchar(.screen_msg)) paste0(" -- ", .screen_msg) else ""),
+                         class = "output")
+            }
 
 
           }
@@ -1431,6 +1716,14 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
         svy.strata = 'v024'
       }
 
+      ### Model log: announce that we are running only the models that
+      ### passed the data sparsity check.
+      append_section("Model Fitting (models that passed check)")
+      append_log(paste0("# Country: ", CountryInfo$country(),
+                        " | Survey year: ", CountryInfo$svyYear_selected(),
+                        " | Indicator: ", CountryInfo$svy_indicator_var()),
+                 class = "output")
+
       for (i in seq_len(nrows)) {
         for (j in seq_len(ncols())) {
 
@@ -1464,6 +1757,11 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
               Sys.sleep(0.5)
               session$sendCustomMessage('controlSpinner', list(action = "hide"))
 
+              append_log(paste0("[", tmp.adm, " / ", tmp.method,
+                                "] Skipped (already attempted; status: ",
+                                tmp.tracker.list$status, ")."),
+                         class = "output")
+
               next
             }
 
@@ -1487,6 +1785,11 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
 
               session$sendCustomMessage('controlSpinner', list(action = "hide"))
 
+              append_log(paste0("[", tmp.adm, " / ", tmp.method,
+                                "] Skipped: data sparsity warning -- model not fitted ",
+                                "(use 'Run all selected models' to force-fit)."),
+                         class = "warning")
+
               next
             }
 
@@ -1498,18 +1801,35 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
 
               session$sendCustomMessage('controlSpinner', list(action = "hide"))
 
+              append_log(paste0("[", tmp.adm, " / ", tmp.method,
+                                "] Skipped: data sparsity error -- model will not be fitted."),
+                         class = "error")
+
               next
             }
 
 
-            ### Run model
+            ### Model log: emit the equivalent R code for this fit
+            append_code(build_model_code(
+              method        = tmp.method,
+              adm_level     = tmp.adm,
+              adm_num       = tmp.adm.num,
+              strat_level   = CountryInfo$GADM_strata_level(),
+              country_iso3  = country_iso3,
+              indicator_var = CountryInfo$svy_indicator_var(),
+              svy_year      = CountryInfo$svyYear_selected()
+            ))
+
+            ### Run model (wrapped with log capture so message() / warning()
+            ### output emitted by the surveyPrev / SUMMER / INLA stack
+            ### is teed into the Model Log).
             tmp.res <- tryCatch(
               {
 
                 cov_mat_list <- AnalysisInfo$get_ad_options('adm_cov_list')
 
                 #R.utils::withTimeout({
-                tmp.res <- suppressWarnings(fit_svy_model(cluster.geo= CountryInfo$svy_GPS_dat(),
+                tmp.res <- with_log_capture(suppressWarnings(fit_svy_model(cluster.geo= CountryInfo$svy_GPS_dat(),
                                                           #cluster.admin.info = tmp.geo.info,
                                                           gadm.list = CountryInfo$GADM_list(),
                                                           analysis.dat =   CountryInfo$svy_analysis_dat(),
@@ -1521,7 +1841,7 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
                                                           #svy.strata = svy.strata,
                                                           #nested=AnalysisInfo$get_ad_options('nested'),
                                                           #area_cov_frame = cov_mat_list[[tmp.adm]]
-                                            ))
+                                            )))
                 #}, timeout = 300) ### 5 minutes for timeout
               },error = function(e) {
                 tmp.tracker.list$status <<- 'Unsuccessful'
@@ -1534,6 +1854,8 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
                   tmp.tracker.list$message <<- e$message
                   message(e$message)
                 }
+                append_log(paste0("Error in fit_svy_model(): ", conditionMessage(e)),
+                           class = "error")
                 return(NULL)
               }
             )
@@ -1551,6 +1873,24 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
             if(tmp.method=='Direct'&&tmp.adm=='National'){
               AnalysisInfo$Natl_res(tmp.res$res.natl)
               message(tmp.res$res.natl$direct.est)
+            }
+
+            ### Model log: final status for this cell
+            if (identical(tmp.tracker.list$status, "Successful")) {
+              append_log(paste0("[", tmp.adm, " / ", tmp.method,
+                                "] Model fitted successfully."),
+                         class = "output")
+              if (tmp.method == 'Direct' && tmp.adm == 'National' &&
+                  !is.null(tmp.res$res.natl$direct.est)) {
+                append_log(paste0("National direct estimate: ",
+                                  signif(as.numeric(tmp.res$res.natl$direct.est), 4)),
+                           class = "output")
+              }
+            } else {
+              append_log(paste0("[", tmp.adm, " / ", tmp.method,
+                                "] ", tmp.tracker.list$status, ": ",
+                                tmp.tracker.list$message),
+                         class = "error")
             }
 
 
@@ -1605,6 +1945,14 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
         svy.strata = 'v024'
       }
 
+      ### Model log: announce that we are running ALL selected models,
+      ### including those that produced a sparsity warning.
+      append_section("Model Fitting (all selected models)")
+      append_log(paste0("# Country: ", CountryInfo$country(),
+                        " | Survey year: ", CountryInfo$svyYear_selected(),
+                        " | Indicator: ", CountryInfo$svy_indicator_var()),
+                 class = "output")
+
       for (i in seq_len(nrows)) {
         for (j in seq_len(ncols())) {
 
@@ -1640,6 +1988,11 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
                 Sys.sleep(0.5)
                 session$sendCustomMessage('controlSpinner', list(action = "hide"))
 
+                append_log(paste0("[", tmp.adm, " / ", tmp.method,
+                                  "] Skipped (already attempted; status: ",
+                                  tmp.tracker.list$status, ")."),
+                           class = "output")
+
                 next
               }
             }
@@ -1665,6 +2018,10 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
 
               session$sendCustomMessage('controlSpinner', list(action = "hide"))
 
+              append_log(paste0("[", tmp.adm, " / ", tmp.method,
+                                "] Skipped: data sparsity error -- model will not be fitted."),
+                         class = "error")
+
               next
             }
 
@@ -1673,9 +2030,25 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
               tmp.tracker.list$status <- 'Warning'
               tmp.tracker.list$message <- 'Model fitted, but interpret with caution due to data sparsity.'
 
+              append_log(paste0("[", tmp.adm, " / ", tmp.method,
+                                "] Force-fitting despite sparsity warning. ",
+                                "Interpret results with caution."),
+                         class = "warning")
+
             }
 
-            ### Run model
+            ### Model log: emit the equivalent R code for this fit
+            append_code(build_model_code(
+              method        = tmp.method,
+              adm_level     = tmp.adm,
+              adm_num       = tmp.adm.num,
+              strat_level   = CountryInfo$GADM_strata_level(),
+              country_iso3  = country_iso3,
+              indicator_var = CountryInfo$svy_indicator_var(),
+              svy_year      = CountryInfo$svyYear_selected()
+            ))
+
+            ### Run model (wrapped with log capture, see run_analysis_clear)
             tmp.res <- tryCatch(
               {
 
@@ -1684,7 +2057,7 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
                 cov_mat_list <- AnalysisInfo$get_ad_options('adm_cov_list')
 
                 #R.utils::withTimeout({
-                tmp.res <- suppressWarnings(fit_svy_model(cluster.geo= CountryInfo$svy_GPS_dat(),
+                tmp.res <- with_log_capture(suppressWarnings(fit_svy_model(cluster.geo= CountryInfo$svy_GPS_dat(),
                                                           #cluster.admin.info = tmp.geo.info,
                                                           gadm.list = CountryInfo$GADM_list(),
                                                           analysis.dat =   CountryInfo$svy_analysis_dat(),
@@ -1696,7 +2069,7 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
                                                           #svy.strata = svy.strata,
                                                           #nested=AnalysisInfo$get_ad_options('nested'),
                                                           #area_cov_frame = cov_mat_list[[tmp.adm]]
-                ))
+                )))
                 #}, timeout = 300) ### 5 minutes for timeout
               },error = function(e) {
                 tmp.tracker.list$status <<- 'Unsuccessful'
@@ -1709,6 +2082,8 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
                   tmp.tracker.list$message <<- e$message
                   message(e$message)
                 }
+                append_log(paste0("Error in fit_svy_model(): ", conditionMessage(e)),
+                           class = "error")
                 return(NULL)
               }
             )
@@ -1726,6 +2101,28 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
             if(tmp.method=='Direct'&&tmp.adm=='National'){
               AnalysisInfo$Natl_res(tmp.res$res.natl)
               message(tmp.res$res.natl$direct.est)
+            }
+
+            ### Model log: final status for this cell
+            if (identical(tmp.tracker.list$status, "Successful")) {
+              append_log(paste0("[", tmp.adm, " / ", tmp.method,
+                                "] Model fitted successfully."),
+                         class = "output")
+              if (tmp.method == 'Direct' && tmp.adm == 'National' &&
+                  !is.null(tmp.res$res.natl$direct.est)) {
+                append_log(paste0("National direct estimate: ",
+                                  signif(as.numeric(tmp.res$res.natl$direct.est), 4)),
+                           class = "output")
+              }
+            } else if (identical(tmp.tracker.list$status, "Warning")) {
+              append_log(paste0("[", tmp.adm, " / ", tmp.method,
+                                "] ", tmp.tracker.list$message),
+                         class = "warning")
+            } else {
+              append_log(paste0("[", tmp.adm, " / ", tmp.method,
+                                "] ", tmp.tracker.list$status, ": ",
+                                tmp.tracker.list$message),
+                         class = "error")
             }
 
 
@@ -1903,6 +2300,133 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
       return(df)
 
     })
+
+
+    ###############################################################
+    ### Model Log: render the running transcript
+    ###############################################################
+
+    ## Build the HTML view of the log. Each entry is rendered on its own
+    ## line, coloured by class. We use a <pre>-like styled <div> so
+    ## whitespace and indentation in code blocks are preserved.
+    output$model_log_console <- renderUI({
+      entries <- model_log()
+
+      if (length(entries) == 0) {
+        return(HTML(paste0(
+          "<span class='log-message'># Model Log is empty.</span>\n",
+          "<span class='log-output'>",
+          "Run the Data Sparsity Check or Model Fitting in the ",
+          "'Model Implementation' tab to populate this log.</span>"
+        )))
+      }
+
+      lines <- vapply(entries, function(e) {
+        cls <- switch(e$class,
+                      "section" = "log-section",
+                      "code"    = "log-code",
+                      "output"  = "log-output",
+                      "message" = "log-message",
+                      "warning" = "log-warning",
+                      "error"   = "log-error",
+                      "log-output")
+        prompt_html <- ""
+        if (identical(e$class, "code")) {
+          # First char of a code line is already '> ' or '+ ' (see
+          # append_code). Split it off so we can paint the prompt
+          # differently from the code itself.
+          if (nchar(e$text) >= 2 &&
+              substr(e$text, 1, 2) %in% c("> ", "+ ")) {
+            prompt_html <- paste0(
+              "<span class='log-prompt'>",
+              .escape_html(substr(e$text, 1, 2)),
+              "</span>"
+            )
+            body <- .escape_html(substr(e$text, 3, nchar(e$text)))
+            return(paste0(prompt_html,
+                          "<span class='", cls, "'>", body, "</span>"))
+          }
+        }
+        paste0("<span class='log-time'>[", e$time, "] </span>",
+               "<span class='", cls, "'>",
+               .escape_html(e$text),
+               "</span>")
+      }, character(1))
+
+      HTML(paste(lines, collapse = "\n"))
+    })
+
+    ## Clear button
+    observeEvent(input$model_log_clear, {
+      model_log(list())
+    })
+
+    ## Copy to clipboard: assemble a plain-text version of the log and
+    ## ship it to the small JS handler registered in the UI. The handler
+    ## uses document.execCommand('copy') so it works without extra deps.
+    observeEvent(input$model_log_copy, {
+      entries <- model_log()
+      if (length(entries) == 0) {
+        showNotification("Model Log is empty -- nothing to copy.",
+                         type = "warning", duration = 3)
+        return()
+      }
+      txt <- paste(vapply(entries, function(e) {
+        if (identical(e$class, "code") || identical(e$class, "section")) {
+          e$text
+        } else {
+          paste0("[", e$time, "] ", e$text)
+        }
+      }, character(1)), collapse = "\n")
+      session$sendCustomMessage(session$ns("model_log_copy_msg"), txt)
+      showNotification("Model Log copied to clipboard.",
+                       type = "message", duration = 2)
+    })
+
+    ## Download handler: same plain-text rendering, saved as .txt
+    output$model_log_download <- downloadHandler(
+      filename = function() {
+        country  <- tryCatch(CountryInfo$country(), error = function(e) "country")
+        if (is.null(country) || !nzchar(country)) country <- "country"
+        ind <- tryCatch(CountryInfo$svy_indicator_var(),
+                        error = function(e) "indicator")
+        if (is.null(ind) || !nzchar(ind)) ind <- "indicator"
+        stamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+        paste0("sae4health_model_log_",
+               gsub("[^A-Za-z0-9]+", "_", country), "_",
+               gsub("[^A-Za-z0-9]+", "_", ind), "_",
+               stamp, ".txt")
+      },
+      content = function(file) {
+        entries <- model_log()
+        header <- c(
+          "# sae4health Model Log",
+          paste0("# Country:    ",
+                 tryCatch(CountryInfo$country(),  error = function(e) "")),
+          paste0("# Survey:     ",
+                 tryCatch(CountryInfo$svyYear_selected(),
+                          error = function(e) "")),
+          paste0("# Indicator:  ",
+                 tryCatch(CountryInfo$svy_indicator_var(),
+                          error = function(e) "")),
+          paste0("# Exported:   ", format(Sys.time(), usetz = TRUE)),
+          "#",
+          ""
+        )
+        body <- if (length(entries) == 0) {
+          "# (log is empty)"
+        } else {
+          vapply(entries, function(e) {
+            if (identical(e$class, "code") || identical(e$class, "section")) {
+              e$text
+            } else {
+              paste0("[", e$time, "] ", e$text)
+            }
+          }, character(1))
+        }
+        writeLines(c(header, body), con = file)
+      }
+    )
 
 
 
