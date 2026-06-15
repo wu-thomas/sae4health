@@ -860,7 +860,7 @@ if(FALSE){
   wide_format$CR <- wide_format$ID %in% CR_couple
 
   # merge back with the information data frame
-  surveyPrev_ind_list <-  surveyPrev::surveyPrevIndicators
+  #surveyPrev_ind_list <-  surveyPrev::surveyPrevIndicators
   #full_ind_des <- merge(surveyPrev_ind_list,wide_format,by='ID',all.x=T)
   full_ind_des[full_ind_des$ID=='FP_CUSA_W_MOD',]$Description <-  "Modern contraceptive prevalence rate (all women currently using any modern method of contraception)"
 
