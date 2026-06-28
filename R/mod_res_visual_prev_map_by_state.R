@@ -123,6 +123,13 @@ mod_res_visual_prev_map_by_state_ui <- function(id) {
           uiOutput(ns("prev_map"))
         ),
         div(
+          style = paste0(
+            "width: max(50%, 600px); margin-top: 6px; ",
+            "font-size: 12px; color: #888888;"
+          ),
+          "* gray areas are indicative of locations with insufficient sample"
+        ),
+        div(
           style = "width: max(50%, 600px); margin-top: 20px; display: flex; justify-content: center;",
           uiOutput(ns("download_button_ui"))
         )
@@ -532,6 +539,314 @@ mod_res_visual_prev_map_by_state_server <- function(id, CountryInfo, AnalysisInf
     })
     
     ###############################################################
+    ### robust value extraction + fallback rendering helpers
+    ###############################################################
+    ##
+    ## Background:
+    ## surveyPrev::prevMap.web() determines its legend range from
+    ##   range(value, na.rm = TRUE). When every region maps to NA (which happens
+    ##   for some Direct/Admin-2 results with data-sparsity warnings, or whenever
+    ##   the display shapefile region names do not line up with the names the
+    ##   model was fit on), that range collapses to c(Inf, -Inf) and the internal
+    ##   seq() call errors with "'from' must be a finite number". The module's
+    ##   tryCatch then swallows the error and returns the bare base map, i.e. the
+    ##   "Presenting ..." text shows but the map is blank.
+    ##
+    ## The helpers below replicate just enough of prevMap.web's data preparation
+    ## to (a) decide whether the native renderer can safely be used, (b) hand it
+    ## an explicit, finite value.range / num_bins so it can never hit that crash,
+    ## and (c) draw a self-contained choropleth fallback when the native join
+    ## would be empty -- including a normalized-name retry that recovers data
+    ## when the only problem is cosmetic mismatches in region names.
+    
+    .res_adm_level <- function(res.obj) {
+      lvl <- suppressWarnings(as.integer(res.obj$admin))
+      if (length(lvl) == 0 || is.na(lvl)) 2L else lvl
+    }
+    
+    # Harmonize a surveyPrev result object into a tidy keyed data.frame.
+    .harmonize_res <- function(res.obj) {
+      adm_level <- .res_adm_level(res.obj)
+      survey.res <- res.obj[[paste0("res.admin", adm_level)]]
+      if (is.null(survey.res) || nrow(survey.res) == 0) {
+        return(NULL)
+      }
+      
+      pick <- function(df, cols) {
+        hit <- cols[cols %in% names(df)]
+        if (length(hit) == 0) rep(NA_real_, nrow(df)) else as.numeric(df[[hit[1]]])
+      }
+      
+      mean_v  <- pick(survey.res, c("direct.est", "mean"))
+      sd_v    <- pick(survey.res, c("direct.se", "sd"))
+      var_v   <- pick(survey.res, c("direct.var", "var"))
+      lower_v <- pick(survey.res, c("direct.lower", "lower"))
+      upper_v <- pick(survey.res, c("direct.upper", "upper"))
+      
+      ## invalidate degenerate uncertainties (mirrors surveyPrev harmonization)
+      bad_sd <- is.na(sd_v) | sd_v < 1e-08 | sd_v > 1e10
+      var_v[bad_sd] <- NA
+      lower_v[bad_sd] <- NA
+      upper_v[bad_sd] <- NA
+      sd_v[bad_sd] <- NA
+      
+      ci_width <- upper_v - lower_v
+      cv_v <- sd_v / mean_v
+      
+      if (adm_level == 2 && "admin2.name.full" %in% names(survey.res)) {
+        join_key <- as.character(survey.res$admin2.name.full)
+        region_name <- if ("admin2.name" %in% names(survey.res)) {
+          as.character(survey.res$admin2.name)
+        } else {
+          join_key
+        }
+        upper_name <- if ("admin1.name" %in% names(survey.res)) {
+          as.character(survey.res$admin1.name)
+        } else {
+          NA_character_
+        }
+      } else if (adm_level == 1 && "admin1.name" %in% names(survey.res)) {
+        join_key <- as.character(survey.res$admin1.name)
+        region_name <- join_key
+        upper_name <- NA_character_
+      } else {
+        join_key <- rep("National", nrow(survey.res))
+        region_name <- join_key
+        upper_name <- NA_character_
+      }
+      
+      data.frame(
+        join_key = join_key,
+        region.name = region_name,
+        upper.adm.name = upper_name,
+        mean = mean_v, sd = sd_v, var = var_v,
+        lower = lower_v, upper = upper_v,
+        CI.width = ci_width, cv = cv_v,
+        stringsAsFactors = FALSE
+      )
+    }
+    
+    # Build the same join key prevMap.web builds on the polygon shapefile.
+    .poly_key <- function(poly, res.obj) {
+      adm_level <- .res_adm_level(res.obj)
+      by.adm2 <- res.obj$admin.info$by.adm
+      by.adm1 <- res.obj$admin.info$by.adm.upper %||% by.adm2
+      
+      if (adm_level == 2 && !is.null(by.adm1) && !is.null(by.adm2) &&
+          by.adm1 %in% names(poly) && by.adm2 %in% names(poly)) {
+        paste0(as.character(poly[[by.adm1]]), "_", as.character(poly[[by.adm2]]))
+      } else if (adm_level == 1 && !is.null(by.adm2) && by.adm2 %in% names(poly)) {
+        as.character(poly[[by.adm2]])
+      } else {
+        rep("National", nrow(poly))
+      }
+    }
+    
+    # Merge results onto the polygons, with an exact then normalized name match.
+    .merge_results_to_poly <- function(poly, res.obj, value.to.plot, threshold.p = NULL) {
+      poly <- sf::st_as_sf(poly)
+      res_tab <- .harmonize_res(res.obj)
+      if (is.null(res_tab)) {
+        return(NULL)
+      }
+      
+      poly$join_key <- .poly_key(poly, res.obj)
+      
+      norm <- function(x) {
+        x <- tolower(trimws(gsub("\\s+", " ", as.character(x))))
+        gsub("\\s*_\\s*", "_", x)
+      }
+      
+      used_norm <- FALSE
+      idx <- match(poly$join_key, res_tab$join_key)
+      need <- is.na(idx)
+      if (any(need)) {
+        idx_norm <- match(norm(poly$join_key[need]), norm(res_tab$join_key))
+        filled <- !is.na(idx_norm)
+        if (any(filled)) {
+          idx[which(need)[filled]] <- idx_norm[filled]
+          used_norm <- TRUE
+        }
+      }
+      
+      for (cc in c("mean", "sd", "var", "lower", "upper", "CI.width", "cv")) {
+        poly[[cc]] <- res_tab[[cc]][idx]
+      }
+      
+      ## region labels come from the polygon itself so that no-data regions
+      ## (absent from the result) are still named on the map.
+      by.adm2 <- res.obj$admin.info$by.adm
+      by.adm1 <- res.obj$admin.info$by.adm.upper %||% by.adm2
+      poly$region.name <- if (!is.null(by.adm2) && by.adm2 %in% names(poly)) {
+        as.character(poly[[by.adm2]])
+      } else {
+        poly$join_key
+      }
+      poly$upper.adm.name <- if (!is.null(by.adm1) && by.adm1 %in% names(poly) &&
+                                 !identical(by.adm1, by.adm2)) {
+        as.character(poly[[by.adm1]])
+      } else {
+        NA_character_
+      }
+      
+      ## exceedance probability needs posterior samples
+      poly$exceed_prob <- NA_real_
+      if (identical(value.to.plot, "exceed_prob") && !is.null(threshold.p)) {
+        adm_level <- .res_adm_level(res.obj)
+        post <- res.obj[[paste0("admin", adm_level, "_post")]]
+        if (!is.null(post)) {
+          post <- as.matrix(post)
+          if (ncol(post) != nrow(res_tab) && nrow(post) == nrow(res_tab)) {
+            post <- t(post)
+          }
+          if (ncol(post) == nrow(res_tab)) {
+            ep <- apply(post, 2, function(z) mean(z > threshold.p, na.rm = TRUE))
+            ep[is.na(res_tab$var)] <- NA
+            poly$exceed_prob <- ep[idx]
+          }
+        }
+      }
+      
+      poly$value <- switch(
+        value.to.plot,
+        "mean" = poly$mean,
+        "cv" = poly$cv,
+        "CI.width" = poly$CI.width,
+        "exceed_prob" = poly$exceed_prob,
+        poly$mean
+      )
+      
+      poly$warnings <- NA_character_
+      poly$warnings[!is.na(poly$mean) & is.na(poly$sd)] <-
+        "Data in this region are insufficient for reliable estimates with the current method."
+      poly$warnings[is.na(poly$mean)] <- "No data in this region"
+      
+      list(
+        poly = poly,
+        n_finite = sum(is.finite(poly$value)),
+        used_norm = used_norm
+      )
+    }
+    
+    .fmt_value <- function(x, value.to.plot) {
+      if (is.na(x)) {
+        return("N/A")
+      }
+      if (value.to.plot %in% c("cv", "exceed_prob")) {
+        paste0(formatC(100 * x, format = "f", digits = 1), "%")
+      } else {
+        formatC(x, format = "f", digits = 3)
+      }
+    }
+    
+    # Self-contained interactive choropleth, used whenever prevMap.web cannot.
+    .fallback_leaflet <- function(merged, value.to.plot, base_plot,
+                                  legend.label = "Estimates", reverse = FALSE) {
+      poly <- merged$poly
+      finite_vals <- poly$value[is.finite(poly$value)]
+      
+      if (length(finite_vals) == 0) {
+        no_data_labels <- lapply(poly$region.name, function(r) {
+          htmltools::HTML(paste0("Region: ", r, "<br/>No reliable estimate"))
+        })
+        m <- base_plot %>%
+          leaflet::addPolygons(
+            data = poly, weight = 1, color = "gray",
+            fillColor = "#AEAEAE", fillOpacity = 0.9, opacity = 1,
+            label = no_data_labels
+          ) %>%
+          leaflet::addControl(
+            html = paste0(
+              "<div style='background:#fff;padding:6px 10px;border-radius:4px;",
+              "font-size:13px;'>No mappable estimates for this selection.<br/>",
+              "Regions lack valid values for the chosen measure.</div>"
+            ),
+            position = "topright"
+          )
+        return(m)
+      }
+      
+      rng <- range(finite_vals)
+      if (identical(value.to.plot, "exceed_prob")) {
+        rng <- c(0, 1)
+      } else if (diff(rng) < 0.005) {
+        rng <- c(max(0, rng[1] - 0.005), min(1, rng[2] + 0.005))
+      }
+      pal <- leaflet::colorNumeric("viridis", domain = rng,
+                                   na.color = "#AEAEAE", reverse = reverse)
+      
+      labels <- lapply(seq_len(nrow(poly)), function(i) {
+        lab <- paste0("Region: ", poly$region.name[i], "<br/>")
+        if (!is.na(poly$upper.adm.name[i])) {
+          lab <- paste0(lab, "Upper Admin: ", poly$upper.adm.name[i], "<br/>")
+        }
+        lab <- paste0(lab, legend.label, ": ",
+                      .fmt_value(poly$value[i], value.to.plot))
+        if (!is.na(poly$warnings[i])) {
+          lab <- paste0(lab, "<br/><span style='color:red;'>",
+                        poly$warnings[i], "</span>")
+        }
+        htmltools::HTML(lab)
+      })
+      
+      m <- base_plot %>%
+        leaflet::addPolygons(
+          data = poly, weight = 1, color = "gray",
+          fillColor = ~ pal(value), fillOpacity = 1, opacity = 1,
+          label = labels,
+          highlightOptions = leaflet::highlightOptions(
+            weight = 2, color = "#666", fillOpacity = 0.75,
+            bringToFront = TRUE, sendToBack = TRUE
+          )
+        ) %>%
+        leaflet::addLegend(
+          pal = pal, values = finite_vals, title = legend.label,
+          position = "bottomright", na.label = "No Data"
+        )
+      
+      ## outline regions whose estimates are statistically unreliable
+      sparse <- poly[!is.na(poly$mean) & is.na(poly$sd), ]
+      if (nrow(sparse) > 0) {
+        m <- m %>%
+          leaflet::addPolygons(
+            data = sparse, weight = 1.5, color = "gray",
+            fill = FALSE, opacity = 0.9, dashArray = "4,4"
+          )
+      }
+      m
+    }
+    
+    # Self-contained static choropleth, used whenever prevMap() cannot.
+    .fallback_static <- function(merged, value.to.plot,
+                                 legend.label = "Estimates", reverse = FALSE) {
+      poly <- merged$poly
+      finite_vals <- poly$value[is.finite(poly$value)]
+      g <- ggplot2::ggplot(poly)
+      
+      if (length(finite_vals) == 0) {
+        g <- g +
+          ggplot2::geom_sf(fill = "#AEAEAE", color = "white", linewidth = 0.2) +
+          ggplot2::labs(caption = "No mappable estimates for this selection.")
+      } else {
+        cols <- viridisLite::viridis(10)
+        if (reverse) cols <- rev(cols)
+        g <- g +
+          ggplot2::geom_sf(ggplot2::aes(fill = value),
+                           color = "white", linewidth = 0.2) +
+          ggplot2::scale_fill_gradientn(colours = cols, na.value = "#AEAEAE",
+                                        name = legend.label)
+      }
+      
+      g +
+        ggplot2::theme_minimal() +
+        ggplot2::theme(
+          axis.text = ggplot2::element_blank(),
+          axis.ticks = ggplot2::element_blank(),
+          panel.grid = ggplot2::element_blank()
+        )
+    }
+    
+    ###############################################################
     ### interactive map
     ###############################################################
     
@@ -580,24 +895,97 @@ mod_res_visual_prev_map_by_state_server <- function(id, CountryInfo, AnalysisInf
         NULL
       }
       
-      prev.interactive.plot <- tryCatch({
-        suppressWarnings(
-          surveyPrev::prevMap.web(
-            res.obj = model_res_selected,
-            poly.shp = poly_selected,
-            admin1.focus = NULL,
-            value.to.plot = input$selected_measure,
-            legend.label = "Estimates",
-            map.title = NULL,
-            threshold.p = selected_threshold,
-            use.basemap = CountryInfo$use_basemap(),
-            legend.color.reverse = CountryInfo$legend_color_reverse()
+      reverse_col <- isTRUE(CountryInfo$legend_color_reverse())
+      
+      ## Pre-compute the values that will be mapped so a data-sparsity / region
+      ## naming edge case cannot silently produce a blank map (see helper notes).
+      merged <- tryCatch(
+        .merge_results_to_poly(
+          poly_selected, model_res_selected,
+          input$selected_measure, selected_threshold
+        ),
+        error = function(e) {
+          message("Value merge failed: ", e$message)
+          NULL
+        }
+      )
+      
+      ## Native renderer is safe only when its own (exact-name) join yields at
+      ## least one finite value; in that case we hand it an explicit, finite
+      ## value.range + num_bins so the all-NA legend crash cannot occur.
+      can_use_native <- !is.null(merged) && !merged$used_norm && merged$n_finite >= 1
+      
+      if (can_use_native) {
+        fv <- merged$poly$value[is.finite(merged$poly$value)]
+        vr <- range(fv)
+        if (input$selected_measure == "exceed_prob") {
+          vr <- c(0, 1)
+        } else if (diff(vr) < 0.005) {
+          vr <- c(max(0, vr[1] - 0.005), min(1, vr[2] + 0.005))
+        }
+        nb <- suppressWarnings(min(round(diff(vr) / 0.1), 6))
+        nb <- max(4, nb)
+        if (!is.finite(nb)) nb <- 4
+        
+        prev.interactive.plot <- tryCatch({
+          suppressWarnings(
+            surveyPrev::prevMap.web(
+              res.obj = model_res_selected,
+              poly.shp = poly_selected,
+              admin1.focus = NULL,
+              value.to.plot = input$selected_measure,
+              value.range = vr,
+              num_bins = nb,
+              legend.label = "Estimates",
+              map.title = NULL,
+              threshold.p = selected_threshold,
+              use.basemap = CountryInfo$use_basemap(),
+              legend.color.reverse = reverse_col
+            )
           )
+        }, error = function(e) {
+          message("prevMap.web failed, using fallback: ", e$message)
+          tryCatch(
+            .fallback_leaflet(merged, input$selected_measure,
+                              prev.interactive.plot, "Estimates", reverse_col),
+            error = function(e2) {
+              message("Fallback map failed: ", e2$message)
+              prev.interactive.plot
+            }
+          )
+        })
+      } else if (!is.null(merged)) {
+        ## Native join would be empty (blank). Draw our own choropleth, which
+        ## also recovers data when only a normalized name match succeeded.
+        prev.interactive.plot <- tryCatch(
+          .fallback_leaflet(merged, input$selected_measure,
+                            prev.interactive.plot, "Estimates", reverse_col),
+          error = function(e) {
+            message("Fallback map failed: ", e$message)
+            prev.interactive.plot
+          }
         )
-      }, error = function(e) {
-        message("prevMap.web failed: ", e$message)
-        prev.interactive.plot
-      })
+      } else {
+        ## Could not even prepare values; preserve the legacy native attempt.
+        prev.interactive.plot <- tryCatch({
+          suppressWarnings(
+            surveyPrev::prevMap.web(
+              res.obj = model_res_selected,
+              poly.shp = poly_selected,
+              admin1.focus = NULL,
+              value.to.plot = input$selected_measure,
+              legend.label = "Estimates",
+              map.title = NULL,
+              threshold.p = selected_threshold,
+              use.basemap = CountryInfo$use_basemap(),
+              legend.color.reverse = reverse_col
+            )
+          )
+        }, error = function(e) {
+          message("prevMap.web failed: ", e$message)
+          prev.interactive.plot
+        })
+      }
       
       prev.map.interactive.output(prev.interactive.plot)
       prev.interactive.plot
@@ -645,23 +1033,60 @@ mod_res_visual_prev_map_by_state_server <- function(id, CountryInfo, AnalysisInf
         NULL
       }
       
-      prev.static.plot <- tryCatch({
-        suppressWarnings(
-          surveyPrev::prevMap(
-            res.obj = model_res_selected,
-            poly.shp = poly_selected,
-            admin1.focus = NULL,
-            value.to.plot = input$selected_measure,
-            threshold.p = selected_threshold,
-            legend.label = "Estimates",
-            color.reverse = CountryInfo$legend_color_reverse(),
-            map.title = NULL
-          )
+      reverse_col <- isTRUE(CountryInfo$legend_color_reverse())
+      
+      merged <- tryCatch(
+        .merge_results_to_poly(
+          poly_selected, model_res_selected,
+          input$selected_measure, selected_threshold
+        ),
+        error = function(e) {
+          message("Value merge failed: ", e$message)
+          NULL
+        }
+      )
+      
+      can_use_native <- !is.null(merged) && !merged$used_norm && merged$n_finite >= 1
+      
+      if (!is.null(merged) && !can_use_native) {
+        ## Native join would be empty (blank). Draw our own choropleth, which
+        ## also recovers data when only a normalized name match succeeded.
+        prev.static.plot <- tryCatch(
+          .fallback_static(merged, input$selected_measure, "Estimates", reverse_col),
+          error = function(e) {
+            message("Fallback static map failed: ", e$message)
+            NULL
+          }
         )
-      }, error = function(e) {
-        message("prevMap failed: ", e$message)
-        NULL
-      })
+      } else {
+        prev.static.plot <- tryCatch({
+          suppressWarnings(
+            surveyPrev::prevMap(
+              res.obj = model_res_selected,
+              poly.shp = poly_selected,
+              admin1.focus = NULL,
+              value.to.plot = input$selected_measure,
+              threshold.p = selected_threshold,
+              legend.label = "Estimates",
+              color.reverse = reverse_col,
+              map.title = NULL
+            )
+          )
+        }, error = function(e) {
+          message("prevMap failed, using fallback: ", e$message)
+          if (!is.null(merged)) {
+            tryCatch(
+              .fallback_static(merged, input$selected_measure, "Estimates", reverse_col),
+              error = function(e2) {
+                message("Fallback static map failed: ", e2$message)
+                NULL
+              }
+            )
+          } else {
+            NULL
+          }
+        })
+      }
       
       prev.map.static.output(prev.static.plot)
       prev.static.plot
