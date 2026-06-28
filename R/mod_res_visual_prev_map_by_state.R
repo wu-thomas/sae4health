@@ -433,32 +433,132 @@ mod_res_visual_prev_map_by_state_server <- function(id, CountryInfo, AnalysisInf
     #   }
     # })
     
+    ## Reference mean used as the default exceedance threshold and marked on the
+    ## slider with a dotted line. It tracks the focus selection: the National mean
+    ## when viewing the whole country, or the parent-region ("Admin-n") mean when
+    ## the user looks within a specific sub-region.
+    get_threshold_reference <- reactive({
+      focus <- input$selected_focus %||% "National"
+      parent_level <- get_parent_level()
+      
+      natl_mean <- function() {
+        natl <- tryCatch(AnalysisInfo$Natl_res(), error = function(e) NULL)
+        if (!is.null(natl) && !is.null(natl$direct.est)) {
+          as.numeric(natl$direct.est)[1]
+        } else {
+          NA_real_
+        }
+      }
+      
+      ## whole country (or mapping Admin-1, whose parent is National)
+      if (identical(focus, "National") || identical(parent_level, "National")) {
+        return(list(value = natl_mean(), label = "National Mean"))
+      }
+      
+      ## focus is a specific region at parent_level (Admin-1 or deeper):
+      ## pull that region's mean from the parent-level fitted result.
+      res_all <- tryCatch(AnalysisInfo$model_res_list(), error = function(e) NULL)
+      method <- input$selected_method
+      val <- NA_real_
+      if (!is.null(res_all) && !is.null(method)) {
+        parent_res <- res_all[[method]][[parent_level]]
+        if (!is.null(parent_res)) {
+          tab <- tryCatch(.harmonize_res(parent_res), error = function(e) NULL)
+          if (!is.null(tab)) {
+            keyn <- tolower(trimws(as.character(tab$region.name)))
+            hit <- which(keyn == tolower(trimws(focus)))
+            if (length(hit) >= 1) val <- as.numeric(tab$mean[hit[1]])
+          }
+        }
+      }
+      
+      ## fall back to the National mean if the regional mean is unavailable
+      if (is.na(val)) {
+        return(list(value = natl_mean(), label = "National Mean"))
+      }
+      
+      list(value = val, label = paste(parent_level, "Mean"))
+    })
+    
     output$choose_prob <- renderUI({
       req(input$selected_measure)
       
-      if (input$selected_measure == "exceed_prob") {
-        
-        tmp.natl.res <- AnalysisInfo$Natl_res()
-        
-        if (!is.null(tmp.natl.res) && !is.null(tmp.natl.res$direct.est)) {
-          initial.val <- round(as.numeric(tmp.natl.res$direct.est), digits = 2)
-        } else {
-          initial.val <- 0.50
-        }
-        
-        initial.val <- min(max(initial.val, 0), 1)
-        
-        sliderInput(
-          ns("selected_threshold"),
-          "Select Threshold",
-          min = 0,
-          max = 1,
-          value = initial.val,
-          step = 0.01
-        )
-      } else {
-        NULL
+      if (input$selected_measure != "exceed_prob") {
+        return(NULL)
       }
+      
+      ref <- get_threshold_reference()
+      ref_val <- ref$value
+      if (is.null(ref_val) || is.na(ref_val)) ref_val <- 0.50
+      ref_val <- min(max(ref_val, 0), 1)
+      
+      wrap_id <- ns("threshold_slider_wrap")
+      
+      ## position the dotted reference line against the slider track (.irs-line);
+      ## min = 0 / max = 1, so the value maps directly to a fraction of the track.
+      marker_js_tmpl <- "
+(function(){
+  var WRAP_ID='__WRAP__';
+  var frac=__FRAC__;
+  var wrap=document.getElementById(WRAP_ID);
+  if(!wrap){return;}
+  function place(){
+    var line=wrap.querySelector('.irs-line');
+    var marker=wrap.querySelector('.threshold-ref-marker');
+    if(!line||!marker){return false;}
+    var lr=line.getBoundingClientRect();
+    var wr=wrap.getBoundingClientRect();
+    if(lr.width===0){return false;}
+    var x=(lr.left-wr.left)+frac*lr.width;
+    marker.style.left=x+'px';
+    marker.style.top=((lr.top-wr.top)-8)+'px';
+    marker.style.height=(lr.height+16)+'px';
+    marker.style.display='block';
+    return true;
+  }
+  var n=0;
+  var iv=setInterval(function(){n++; if(place()||n>60){clearInterval(iv);}},50);
+  window.__threshRef=window.__threshRef||{};
+  if(window.__threshRef[WRAP_ID]){window.removeEventListener('resize',window.__threshRef[WRAP_ID]);}
+  window.__threshRef[WRAP_ID]=place;
+  window.addEventListener('resize',window.__threshRef[WRAP_ID]);
+})();
+"
+      marker_js <- gsub("__WRAP__", wrap_id, marker_js_tmpl, fixed = TRUE)
+      marker_js <- gsub("__FRAC__",
+                        format(ref_val, digits = 6, scientific = FALSE),
+                        marker_js, fixed = TRUE)
+      
+      tagList(
+        div(
+          id = wrap_id,
+          style = "position: relative;",
+          sliderInput(
+            ns("selected_threshold"),
+            "Select Threshold",
+            min = 0,
+            max = 1,
+            value = ref_val,
+            step = 0.01
+          ),
+          div(
+            class = "threshold-ref-marker",
+            style = paste0(
+              "position: absolute; display: none; width: 0; ",
+              "border-left: 2px dotted #555555; pointer-events: none; z-index: 5;"
+            ),
+            div(
+              class = "threshold-ref-label",
+              style = paste0(
+                "position: absolute; top: -16px; transform: translateX(-50%); ",
+                "white-space: nowrap; font-size: 11px; color: #555555;"
+              ),
+              ref$label
+            )
+          ),
+          tags$script(HTML(marker_js))
+        )
+      )
     })
     
     output$text_display <- renderUI({
