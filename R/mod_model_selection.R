@@ -2273,7 +2273,7 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
             }
 
             if(tmp.status=='Unallowed'){
-              selected_res_tracker[i, j] <- as.character(htmltools::HTML(paste('<span style="color:gray;">&#128711;',tmp.message, '</span>')))
+              selected_res_tracker[i, j] <- as.character(htmltools::HTML(paste('<span style="color:gray;">&#10008;',tmp.message, '</span>')))
               next
             }
 
