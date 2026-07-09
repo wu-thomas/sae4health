@@ -47,7 +47,7 @@ mod_res_visual_prev_map_by_state_ui <- function(id) {
         4,
         selectInput(
           ns("selected_adm"),
-          "Select Admin Level",
+          "Admin Level to Map",
           choices = character(0)
         )
       ),
@@ -55,7 +55,7 @@ mod_res_visual_prev_map_by_state_ui <- function(id) {
         4,
         selectInput(
           ns("selected_focus"),
-          "Look Within",
+          "Map Region",
           choices = "National",
           selected = "National"
         )
@@ -393,9 +393,10 @@ mod_res_visual_prev_map_by_state_server <- function(id, CountryInfo, AnalysisInf
         session = session,
         inputId = "selected_focus",
         label = if (identical(parent_level, "National")) {
-          "Look Within"
+          "Map Region"
         } else {
-          paste("Look Within", parent_level)
+          # paste("Map Region", parent_level)
+          "Map Region"
         },
         choices = focus_choices,
         selected = "National"
