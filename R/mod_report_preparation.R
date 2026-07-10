@@ -2322,7 +2322,11 @@ mod_report_preparation_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
             for(tmp_adm in CountryInfo$GADM_analysis_levels()){
               if(tmp_adm!='National'){
                 ex_adm_maps <- sample_info_map_static(model.gadm.level = admin_to_num(tmp_adm),
-                                                      strat.gadm.level = 1,
+                                                      # FIX: use the survey's actual stratification level
+                                                      # instead of a hardcoded 1, so the pseudo-level logic
+                                                      # (and therefore the admin2.name.full join key) matches
+                                                      # how cluster.info was constructed for this admin level.
+                                                      strat.gadm.level = CountryInfo$GADM_strata_level(),
                                                       analysis.dat = CountryInfo$svy_analysis_dat(),
                                                       gadm.list.visual = CountryInfo$GADM_list_smoothed(),
                                                       cluster.info = geo_info_list[[tmp_adm]]$cluster.info)
@@ -2405,7 +2409,11 @@ mod_report_preparation_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
             tryCatch({
 
               ex_adm_maps <- sample_info_map_static(model.gadm.level = admin_to_num(tmp_adm),
-                                                    strat.gadm.level = 1,
+                                                    # FIX: use the survey's actual stratification level
+                                                    # instead of a hardcoded 1, so the pseudo-level logic
+                                                    # (and therefore the admin2.name.full join key) matches
+                                                    # how cluster.info was constructed for this admin level.
+                                                    strat.gadm.level = CountryInfo$GADM_strata_level(),
                                                     analysis.dat = CountryInfo$svy_analysis_dat(),
                                                     gadm.list.visual = CountryInfo$GADM_list_smoothed(),
                                                     cluster.info = geo_info_list[[tmp_adm]]$cluster.info)

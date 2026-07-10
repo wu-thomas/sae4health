@@ -27,7 +27,16 @@ cluster_admin_info <- function(cluster.geo,
   }
 
   ### determine whether the gadm level is finer than stratification level
-  if(model.gadm.level > strat.gadm.level){pseudo_level=1}else{pseudo_level=1}
+  ### BUG FIX: previously both branches assigned pseudo_level = 1, so for levels
+  ### finer than the stratification level (e.g. Admin-2 with Admin-1 strata) the
+  ### cluster.info / admin.info were built with identical adm1 == adm2 polygons.
+  ### surveyPrev::clusterInfo then set admin2.name.full = "NAME_k_NAME_k"
+  ### (region name duplicated) instead of "NAME_upper_NAME_k". Any downstream
+  ### join keyed on admin2.name.full (e.g. the sample-info maps) therefore failed
+  ### to match the polygons and rendered every region grey (NA). Restoring the
+  ### intended two-branch logic (which every other analogous site in the package
+  ### already uses) fixes the naming so the keys match.
+  if(model.gadm.level > strat.gadm.level){pseudo_level=2}else{pseudo_level=1}
 
   ###############################################################
   ### National level analysis
