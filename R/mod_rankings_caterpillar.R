@@ -184,7 +184,7 @@ mod_rankings_caterpillar_server <- function(id, CountryInfo, AnalysisInfo, MetaI
       method_des <- unname(method_match[selected_method])
       if(is.na(method_des) || length(method_des) == 0) method_des <- selected_method
 
-      subtitle_txt <- "Top Ranking = Highest Prevalence (Worst)\nPoint = median posterior rank; thick bar = 50% interval; thin bar = 90% interval"
+      subtitle_txt <- "Top Ranking = Highest Prevalence \nPoint = median posterior rank; thick bar = 50% interval; thin bar = 90% interval"
       if(!is.null(upper_focus) && !is.na(upper_focus) && nzchar(upper_focus)){
         if(identical(upper_focus, "National")) {
           subtitle_txt <- paste0(subtitle_txt, " | Across all regions nationally")
