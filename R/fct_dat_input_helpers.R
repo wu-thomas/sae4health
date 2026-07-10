@@ -338,6 +338,65 @@ get_country_shapefile <- function(country,source=NULL,...) {
   }
 
 
+  ############################################################################
+  ### Normalize + repair every polygon layer at load time.
+  ###
+  ### ROOT CAUSE (observed for Benin): the saved boundary layers contain
+  ### self-intersecting / invalid polygon geometry. At runtime get_country_shapefile
+  ### does no validation (st_make_valid only runs in the offline prepare_preload_dat
+  ### script, which did not cover these layers). The first s2 spherical-geometry
+  ### operation inside surveyPrev::clusterInfo() then aborts. Depending on the
+  ### active sf/s2 mode this surfaces either as
+  ###   "Loop N is not valid: Edge A crosses edge B"   (s2 spatial op), or
+  ###   "`x` and `y` must share the same src"          (a downstream join on the
+  ###                                                    half-built cluster.info).
+  ### Because model fitting for a level also pulls in the upper layer, a single
+  ### invalid layer breaks that level and the one below it.
+  ###
+  ### We validity-check each layer in planar (GEOS) mode - which never throws on
+  ### bad geometry, unlike s2 - and repair only the invalid ones with
+  ### st_make_valid(). Repaired geometry is then accepted by s2 downstream. This
+  ### is a no-op for layers that are already valid, so healthy countries are
+  ### unaffected. The original sf_use_s2() setting is always restored.
+  ############################################################################
+  normalize_shp_list <- function(shp_list) {
+    if (is.null(shp_list)) return(shp_list)
+
+    ### check/repair validity in planar mode, then restore the global s2 setting
+    old_s2 <- sf::sf_use_s2(FALSE)
+    on.exit(suppressMessages(sf::sf_use_s2(old_s2)), add = TRUE)
+
+    lapply(shp_list, function(x) {
+      if (is.null(x)) return(x)
+
+      ### sp / SpatialPolygonsDataFrame (or anything non-sf) -> sf
+      if (!inherits(x, "sf")) {
+        x <- tryCatch(sf::st_as_sf(x), error = function(e) x)
+      }
+      ### drop dplyr grouping that can confuse join dispatch
+      if (inherits(x, "grouped_df")) {
+        x <- dplyr::ungroup(x)
+      }
+      ### ensure a geographic CRS so later st_join / st_transform are consistent
+      if (inherits(x, "sf") && is.na(sf::st_crs(x))) {
+        x <- sf::st_set_crs(x, 4326)
+      }
+      ### repair invalid (self-intersecting) geometry - the actual fix
+      if (inherits(x, "sf")) {
+        valid <- tryCatch(sf::st_is_valid(x),
+                          error = function(e) rep(FALSE, nrow(x)))
+        if (anyNA(valid) || any(!valid)) {
+          x <- sf::st_make_valid(x)
+        }
+      }
+      x
+    })
+  }
+
+  country_shp_analysis <- normalize_shp_list(country_shp_analysis)
+  country_shp_smoothed <- normalize_shp_list(country_shp_smoothed)
+
+
   return.obj <- list('country_shp_analysis'=country_shp_analysis,
                      'country_shp_smoothed'=country_shp_smoothed)
 

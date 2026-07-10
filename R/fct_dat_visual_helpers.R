@@ -592,8 +592,17 @@ sample_info_map_static <-function(model.gadm.level,
     adm.sf <- gadm.list.visual[[paste0('Admin-',model.gadm.level)]]
 
     adm.sf$region.name <- adm.sf[[paste0("NAME_",model.gadm.level)]]
-    #adm.sf$upper.adm.name <- adm.sf[[paste0("NAME_",model.gadm.level-2)]]
-    adm.sf$upper.adm.name <- adm.sf[["NAME_1"]]
+
+    # BUG FIX (grey Admin-2 sample-info maps):
+    # The cluster.info handed to this function is produced by cluster_admin_info(),
+    # which builds it with identical adm1 == adm2 polygons. surveyPrev::clusterInfo
+    # then sets admin2.name / admin2.name.full from a single by.adm column, so on the
+    # DATA side admin2.name.full = paste0(NAME_k, "_", NAME_k) (the region name
+    # duplicated), NOT paste0(NAME_upper, "_", NAME_k). Previously this branch built
+    # the POLYGON key as paste0(NAME_1, "_", NAME_k), which never matched the data
+    # key, so every region joined to NA and rendered grey. We therefore build the
+    # polygon key the same way the supplied cluster.info does so the join succeeds.
+    adm.sf$upper.adm.name <- adm.sf$region.name
 
     adm.sf <- adm.sf %>%
       dplyr::mutate(admin2.name.full = paste0(upper.adm.name, "_", region.name))
