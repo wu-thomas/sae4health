@@ -1105,11 +1105,22 @@ mod_country_specify_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,pare
 
     ### determine interactive/static map for selected country
     output$mapUI <- renderUI({
-      if (input$mapType) {  # if TRUE, show interactive map
+      req(CountryInfo$country())
+      req(CountryInfo$svyYear_selected())
+
+      map_output <- if (input$mapType) {  # if TRUE, show interactive map
         leaflet::leafletOutput(ns("interactive_country_map"))
       } else {  # if FALSE, show static map
         plotOutput(ns("static_country_map"))
       }
+
+      tagList(
+        map_output,
+        tags$p(
+          "* If you find a discrepancy in the shapefiles / geoboundaries please contact us.",
+          style = "color: grey; font-size: 12px; margin-top: 5px; margin-bottom: 0;"
+        )
+      )
     })
 
     ### interactive map
