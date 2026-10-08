@@ -550,6 +550,14 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
         "  var.fix           = FALSE,  # variance fix disabled for U5MR / IMR"
       } else NULL
 
+      ## IMR: only 4 age bands, so the unit-level model needs an
+      ## age.space.group of matching length (surveyPrev's default is for
+      ## the 8 U5MR bands).
+      imr_ids <- c("CM_ECMR_C_IMR", "CM_ECMR_C_IMF", "imr")
+      agegroup_arg <- if (!is.null(indicator_var) && indicator_var %in% imr_ids) {
+        "  age.space.group   = c(1, 2, 2, 2),  # one entry per IMR age band"
+      } else NULL
+
       body <- switch(
         method,
         "Direct" = c(
@@ -586,6 +594,7 @@ mod_model_selection_server <-  function(id,CountryInfo,AnalysisInfo,MetaInfo,par
           "  cluster.info      = cluster.info,",
           "  admin.info        = admin.info,",
           paste0("  admin             = ", adm_num, strat_arg, ","),
+          agegroup_arg,
           "  aggregation       = TRUE,",
           "  CI                = 0.95)",
           "summary(res$res.admin)"

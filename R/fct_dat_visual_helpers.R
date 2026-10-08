@@ -205,7 +205,7 @@ ncluster.map.static <-function(gadm.level,
     adm.sf$admin1.name <- adm.sf[[paste0("NAME_",1)]]
 
     if(is.null(cluster.info)){
-    cluster.info <- surveyPrev::clusterInfo(geo=cluster.geo,
+    cluster.info <- cluster_info(geo=cluster.geo,
                                             poly.adm1=gadm.list[[paste0('Admin-',1)]],
                                             poly.adm2=gadm.list[[paste0('Admin-',1)]],
                                             by.adm1 = paste0("NAME_",1),
@@ -233,7 +233,7 @@ ncluster.map.static <-function(gadm.level,
 
 
     if(is.null(cluster.info)){
-    cluster.info <- surveyPrev::clusterInfo(geo=cluster.geo,
+    cluster.info <- cluster_info(geo=cluster.geo,
                                             poly.adm1=gadm.list[[paste0('Admin-',gadm.level.num-1)]],
                                             poly.adm2=gadm.list[[paste0('Admin-',gadm.level.num)]],
                                             by.adm1 = paste0("NAME_",gadm.level.num-1),
@@ -338,7 +338,7 @@ ncluster.map.interactive <-function(gadm.level,
     adm.sf$admin1.name <- adm.sf[[paste0("NAME_",1)]]
 
     if(is.null(cluster.info)){
-    cluster.info <- surveyPrev::clusterInfo(geo=cluster.geo,
+    cluster.info <- cluster_info(geo=cluster.geo,
                                             poly.adm1=gadm.list[[paste0('Admin-',1)]],
                                             poly.adm2=gadm.list[[paste0('Admin-',1)]],
                                             by.adm1 = paste0("NAME_",1),
@@ -378,7 +378,7 @@ ncluster.map.interactive <-function(gadm.level,
       dplyr::mutate(admin2.name.full = paste0(upper.adm.name, "_", region.name))
 
     if(is.null(cluster.info)){
-    cluster.info <- surveyPrev::clusterInfo(geo=cluster.geo,
+    cluster.info <- cluster_info(geo=cluster.geo,
                                             poly.adm1=gadm.list[[paste0('Admin-',gadm.level.num-1)]],
                                             poly.adm2=gadm.list[[paste0('Admin-',gadm.level.num)]],
                                             by.adm1 = paste0("NAME_",gadm.level.num-1),

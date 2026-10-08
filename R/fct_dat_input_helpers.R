@@ -198,6 +198,71 @@ get_country_GADM <- function(country,resolution=1) {
 
 
 ###############################################################
+###  remove water-body polygons from admin layers
+###############################################################
+
+#' @description Drop polygons that are water bodies rather than land areas.
+#'
+#'   Some boundary files (e.g. GADM for Uganda) include large lakes such as
+#'   Lake Victoria and Lake Albert as their own admin units. They contain no
+#'   population or survey clusters, but were still treated as areas to
+#'   estimate, and their polygons linked every shoreline district as
+#'   neighbours in the spatial adjacency matrix.
+#'
+#'   A polygon is treated as water if, at its own level or any level above,
+#'   its type field (TYPE_k / ENGTYPE_k) says it is a water body or lake, or
+#'   its name (NAME_k) is of the English form "Lake <name>". The name rule
+#'   deliberately does NOT match "Lac" or "Lago": real populated units carry
+#'   those names (e.g. Chad's Lac region and Lac Iro / Lac Lere departments,
+#'   Mozambique's Lago district). The National layer is never changed, and a
+#'   layer is left as is if filtering would empty it.
+#'
+#' @param shp_list named list of sf layers ('National', 'Admin-1', ...)
+#'
+#' @return the same list with water-body polygons removed
+#'
+#' @noRd
+
+drop_water_bodies <- function(shp_list) {
+  if (is.null(shp_list)) return(shp_list)
+
+  water_type <- "water|^\\s*lake\\s*$|plan d'eau"
+  water_name <- "^\\s*lake\\s+\\S"
+
+  out <- shp_list
+  for (nm in names(shp_list)) {
+    x <- shp_list[[nm]]
+    if (is.null(x) || !inherits(x, "data.frame") || nrow(x) == 0) next
+    lvl <- suppressWarnings(as.integer(sub("^Admin-", "", nm)))
+    if (is.na(lvl) || lvl < 1) next
+
+    is_water <- rep(FALSE, nrow(x))
+    for (k in seq_len(lvl)) {
+      for (col in c(paste0("TYPE_", k), paste0("ENGTYPE_", k))) {
+        if (col %in% names(x)) {
+          v <- as.character(x[[col]])
+          is_water <- is_water | (!is.na(v) & grepl(water_type, v, ignore.case = TRUE))
+        }
+      }
+      col <- paste0("NAME_", k)
+      if (col %in% names(x)) {
+        v <- as.character(x[[col]])
+        is_water <- is_water | (!is.na(v) & grepl(water_name, v, ignore.case = TRUE))
+      }
+    }
+
+    if (any(is_water) && !all(is_water)) {
+      name_col <- paste0("NAME_", lvl)
+      dropped <- if (name_col %in% names(x)) unique(as.character(x[[name_col]][is_water])) else sum(is_water)
+      message(nm, ": removing water-body polygon(s): ", paste(dropped, collapse = ", "))
+      out[[nm]] <- x[!is_water, , drop = FALSE]
+    }
+  }
+  out
+}
+
+
+###############################################################
 ###  load shapefile depending on source
 ###############################################################
 
@@ -395,6 +460,11 @@ get_country_shapefile <- function(country,source=NULL,...) {
 
   country_shp_analysis <- normalize_shp_list(country_shp_analysis)
   country_shp_smoothed <- normalize_shp_list(country_shp_smoothed)
+
+  ### drop water-body "regions" (e.g. Lake Victoria / Lake Albert in Uganda)
+  ### so they are not treated as areas to estimate
+  country_shp_analysis <- drop_water_bodies(country_shp_analysis)
+  country_shp_smoothed <- drop_water_bodies(country_shp_smoothed)
 
 
   return.obj <- list('country_shp_analysis'=country_shp_analysis,

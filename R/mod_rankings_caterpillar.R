@@ -194,7 +194,19 @@ mod_rankings_caterpillar_server <- function(id, CountryInfo, AnalysisInfo, MetaI
       }
 
       rank.df$display_name_clean <- sub(".*_", "", as.character(rank.df$display_name))
-      rank.df$display_name_f <- factor(rank.df$display_name_clean, levels = rev(rank.df$display_name_clean))
+      # Area names can repeat at finer admin levels (e.g. the same admin-2 name under
+      # different admin-1 regions). Factor levels must be unique, so disambiguate
+      # repeated names with their parent region, then fall back to make.unique().
+      plot_labels <- rank.df$display_name_clean
+      dup_names <- plot_labels %in% plot_labels[duplicated(plot_labels)]
+      if(any(dup_names) && "upper_region" %in% names(rank.df)){
+        parent_lab <- sub(".*_", "", as.character(rank.df$upper_region))
+        has_parent <- dup_names & !is.na(parent_lab) & nzchar(parent_lab)
+        plot_labels[has_parent] <- paste0(plot_labels[has_parent], " (", parent_lab[has_parent], ")")
+      }
+      plot_labels <- make.unique(plot_labels, sep = " ")
+      rank.df$display_name_clean <- plot_labels
+      rank.df$display_name_f <- factor(plot_labels, levels = rev(plot_labels))
 
       ggplot2::ggplot(rank.df, ggplot2::aes(x = med_rank, y = display_name_f)) +
         ggplot2::geom_errorbarh(ggplot2::aes(xmin = q05, xmax = q95), height = 0, linewidth = 0.45, color = "#2C7FB8") +
@@ -477,7 +489,7 @@ mod_rankings_caterpillar_server <- function(id, CountryInfo, AnalysisInfo, MetaI
         "Pr(rank ≤ ", top_n, ") = ", ifelse(is.na(map.dat$prob_rank_top_n), "NA", sprintf("%.3f", map.dat$prob_rank_top_n))
       )
       leaflet::leaflet(map.dat) |>
-        leaflet::addProviderTiles(leaflet::providers$CartoDB.Positron) |>
+        leaflet::addTiles() |>
         leaflet::addPolygons(
           fillColor = ~pal(prob_rank_top_n), fillOpacity = 0.75,
           color = "#444444", weight = 0.6, opacity = 1,
@@ -506,7 +518,7 @@ mod_rankings_caterpillar_server <- function(id, CountryInfo, AnalysisInfo, MetaI
         "90% interval: [", ifelse(is.na(map.dat$q05), "NA", sprintf("%.1f", map.dat$q05)), ", ", ifelse(is.na(map.dat$q95), "NA", sprintf("%.1f", map.dat$q95)), "]"
       )
       leaflet::leaflet(map.dat) |>
-        leaflet::addProviderTiles(leaflet::providers$CartoDB.Positron) |>
+        leaflet::addTiles() |>
         leaflet::addPolygons(
           fillColor = ~pal(mean_rank), fillOpacity = 0.75,
           color = "#444444", weight = 0.6, opacity = 1,

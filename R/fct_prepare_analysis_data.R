@@ -69,7 +69,7 @@ prepare_analysis_data <- function(CountryInfo, AnalysisInfo, session, ref_tab_al
     gadm.list <- CountryInfo$GADM_list()
     cluster.geo <- CountryInfo$svy_GPS_dat()
     
-    cluster.info <- surveyPrev::clusterInfo(geo=cluster.geo,
+    cluster.info <- cluster_info(geo=cluster.geo,
                                             poly.adm1=gadm.list[[paste0('Admin-',1)]],
                                             poly.adm2=gadm.list[[paste0('Admin-',1)]],
                                             by.adm1 = paste0("NAME_",1),
