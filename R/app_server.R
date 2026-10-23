@@ -82,7 +82,7 @@ app_server <- function(input, output, session) {
   mod_result_tabulate_server("result_tabulate_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo)
   mod_report_preparation_server("report_preparation_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo)
 
-  mod_res_visual_prev_map_by_state_server("res_visual_prev_map_by_state_1", CountryInfo = CountryInfo, AnalysisInfo = AnalysisInfo)
+  mod_res_visual_prev_map_by_state_server("res_visual_prev_map_by_state_1", CountryInfo = CountryInfo, AnalysisInfo = AnalysisInfo, MetaInfo = MetaInfo)
   mod_res_visual_multiple_maps_server("res_visual_multiple_maps_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo)
 
   mod_res_visual_scatter_server("res_visual_scatter_1",CountryInfo = CountryInfo,AnalysisInfo=AnalysisInfo,MetaInfo=MetaInfo)

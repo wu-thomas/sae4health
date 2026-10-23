@@ -142,7 +142,7 @@ mod_res_visual_prev_map_by_state_ui <- function(id) {
 #' result_visual Server Functions
 #'
 #' @noRd
-mod_res_visual_prev_map_by_state_server <- function(id, CountryInfo, AnalysisInfo) {
+mod_res_visual_prev_map_by_state_server <- function(id, CountryInfo, AnalysisInfo, MetaInfo = NULL) {
   moduleServer(id, function(input, output, session) {
     
     ns <- session$ns
@@ -1110,9 +1110,10 @@ mod_res_visual_prev_map_by_state_server <- function(id, CountryInfo, AnalysisInf
     ### static map
     ###############################################################
     
-    prev.map.static.output <- reactiveVal(NULL)
-    
-    output$prev_map_static <- renderPlot({
+    ## Built as a reactive (not saved from inside renderPlot) so the download
+    ## works even when the static map has never been shown on screen -- the
+    ## tab opens in interactive mode, where renderPlot never runs.
+    prev.map.static.output <- reactive({
       req(input$selected_adm, input$selected_focus, input$selected_method, input$selected_measure)
       req(AnalysisInfo$model_res_list())
       
@@ -1203,8 +1204,11 @@ mod_res_visual_prev_map_by_state_server <- function(id, CountryInfo, AnalysisInf
         })
       }
       
-      prev.map.static.output(prev.static.plot)
       prev.static.plot
+    })
+    
+    output$prev_map_static <- renderPlot({
+      prev.map.static.output()
     })
     
     ###############################################################
@@ -1213,9 +1217,23 @@ mod_res_visual_prev_map_by_state_server <- function(id, CountryInfo, AnalysisInf
     
     output$download_static <- downloadHandler(
       filename = function() {
-        DHS_country_code <- DHS.country.meta[
-          DHS.country.meta$CountryName == CountryInfo$country(),
-        ]$DHS_CountryCode
+        ## DHS.country.meta used to be referenced here without ever being
+        ## defined in this module, so filename() errored and the browser
+        ## reported "Failed - Unknown server error".
+        country.meta <- tryCatch(
+          if (!is.null(MetaInfo)) isolate(MetaInfo$DHS.country.meta()) else NULL,
+          error = function(e) NULL
+        )
+        DHS_country_code <- NULL
+        if (!is.null(country.meta) && "CountryName" %in% names(country.meta)) {
+          DHS_country_code <- country.meta[
+            country.meta$CountryName == CountryInfo$country(),
+          ]$DHS_CountryCode
+        }
+        if (length(DHS_country_code) == 0 || is.na(DHS_country_code[1])) {
+          DHS_country_code <- gsub("[^A-Za-z0-9]+", "_", CountryInfo$country() %||% "map")
+        }
+        DHS_country_code <- DHS_country_code[1]
         
         focus_part <- gsub("[^A-Za-z0-9]+", "_", input$selected_focus %||% "National")
         
@@ -1235,9 +1253,15 @@ mod_res_visual_prev_map_by_state_server <- function(id, CountryInfo, AnalysisInf
       },
       
       content = function(file) {
-        pdf(file, width = 10, height = 10)
-        print(prev.map.static.output())
-        dev.off()
+        plot.obj <- tryCatch(prev.map.static.output(), error = function(e) NULL)
+        grDevices::pdf(file, width = 10, height = 10)
+        on.exit(grDevices::dev.off(), add = TRUE)
+        if (is.null(plot.obj)) {
+          graphics::plot.new()
+          graphics::text(0.5, 0.5, "No map is available for the current selection.")
+        } else {
+          print(plot.obj)
+        }
       }
     )
     
