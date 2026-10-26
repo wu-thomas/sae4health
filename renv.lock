@@ -7189,7 +7189,9 @@
         "labelled",
         "sjlabelled",
         "naniar",
-        "jsonlite"
+        "jsonlite",
+        "haven",
+        "tidyr"
       ],
       "Encoding": "UTF-8",
       "LazyData": "true",
@@ -7219,7 +7221,7 @@
       "RemoteUsername": "richardli",
       "RemoteRepo": "surveyPrev",
       "RemoteRef": "main",
-      "RemoteSha": "92ebe0cd3edf29aa17ff47a5ebf084cc2e5dc05e"
+      "RemoteSha": "07ef629ecdd4518ddae5d6fe1a1c3397d1d89a9b"
     },
     "survival": {
       "Package": "survival",
