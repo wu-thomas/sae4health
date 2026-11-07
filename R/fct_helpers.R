@@ -56,6 +56,8 @@ CountryInfo <- R6::R6Class(
     svyYear_list = NULL,
     svyYear_selected = NULL,
 
+    svy_meta = NULL, ### survey meta data (DHS.survey.meta), used to look up survey type (DHS/MIS)
+
 
     display_interactive = NULL,
 
@@ -99,6 +101,8 @@ CountryInfo <- R6::R6Class(
 
       self$svyYear_list <- reactiveVal(NULL)
       self$svyYear_selected <- reactiveVal(NULL)
+
+      self$svy_meta <- reactiveVal(NULL)
 
       self$display_interactive <- reactiveVal(T)
 
@@ -180,6 +184,19 @@ CountryInfo <- R6::R6Class(
       sapply(requiredRecodes, function(recode) {
         is.null(svy_dat[[recode]])
       })
+    },
+
+
+    ### survey type ('DHS', 'MIS', ...) of the selected country and survey year
+    svy_type = function() {
+      get_survey_type(country = self$country(),
+                      svy_year = self$svyYear_selected(),
+                      survey_meta = self$svy_meta())
+    },
+
+    ### display label of the selected survey, e.g. "DHS 2022" or "MIS 2020"
+    svy_label = function() {
+      get_survey_label(self$svy_type(), self$svyYear_selected())
     }
 
 

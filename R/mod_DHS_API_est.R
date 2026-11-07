@@ -12,7 +12,7 @@ mod_DHS_API_est_ui <- function(id){
 
   fluidPage(
     div(class = "module-title",
-        h4("Comparing with DHS Final Report Estimates")), # Add a title
+        h4("Comparing with DHS/MIS Final Report Estimates")), # Add a title
 
     fluidRow(
       column(12,
@@ -64,7 +64,7 @@ mod_DHS_API_est_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,parent_s
       return(HTML(paste0(
         "<div style='font-size: large;'>",
         "<p>",
-        "To ensure the accuracy of our indicator coding schemes, we highly recommand users to compare <strong>app-calculated national estimates</strong> with the <strong>DHS final reports</strong>",
+        "To ensure the accuracy of our indicator coding schemes, we highly recommand users to compare <strong>app-calculated national estimates</strong> with the <strong>", CountryInfo$svy_type(), " final reports</strong>",
         " (through ",
         tags$a("DHS API", href = "https://api.dhsprogram.com/#/index.html",
                  target = "_blank", class = "official-link"),
@@ -183,7 +183,7 @@ mod_DHS_API_est_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,parent_s
           "<p style='font-size: large;'>",
           "For the indicator ",
           "<strong style='background-color: #D0E4F7;'>", CountryInfo$svy_indicator_des(), "</strong>,<br>",
-          "based on the <strong style='background-color: #D0E4F7;'>DHS ", CountryInfo$svyYear_selected(), "</strong> survey for ",
+          "based on the <strong style='background-color: #D0E4F7;'>", CountryInfo$svy_label(), "</strong> survey for ",
           "<strong style='background-color: #D0E4F7;'>", CountryInfo$country(), "</strong>,<br>",
           "our app yields a national estimate of ",
           "<strong style='background-color: #F2DF8D;'>", natl_est, description_suffix, "</strong>.",
@@ -242,7 +242,7 @@ mod_DHS_API_est_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,parent_s
       if(dim(ind_api_est)[1]==0){
         return(HTML(paste0(
           "<p style='font-size: large;'>",
-          "Estimate from the DHS report is not available through DHS API. Please manually check for consistency. ",
+          "Estimate from the ", CountryInfo$svy_type(), " report is not available through DHS API. Please manually check for consistency. ",
           "</p>")
         ))
       }
@@ -251,7 +251,7 @@ mod_DHS_API_est_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,parent_s
 
       return(
         tagList(HTML(paste0(
-          "<h3 style='font-size: large;margin-top:15px'><strong>National Estimate from the DHS Report</strong></h3>",
+          "<h3 style='font-size: large;margin-top:15px'><strong>National Estimate from the ", CountryInfo$svy_type(), " Report</strong></h3>",
           "<p style='font-size: large;'>",
           "</p>")),
           DT::DTOutput(ns("selected_ind_DHS_API_est")),
