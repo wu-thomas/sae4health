@@ -466,6 +466,72 @@ mod_country_specify_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,pare
     updateSelectInput(inputId = "Svy_ind_group", choices = sort(unique(ref_tab_all$Topic),decreasing = F))
 
 
+    ###############################################################
+    ### indicators available for the selected survey type (DHS/MIS)
+    ###############################################################
+
+    ### survey type of the selected survey; only changes (and triggers updates)
+    ### when the type actually changes, e.g. switching from a DHS to an MIS
+    current_svy_type <- reactiveVal('DHS')
+
+    observe({
+      current_svy_type(CountryInfo$svy_type())
+    })
+
+    ### indicator table restricted to what the selected survey type supports
+    svy_ind_tab <- reactive({
+      filter_indicators_by_survey_type(ref_tab_all, current_svy_type())
+    })
+
+    ### refresh indicator group / indicator menus when the survey type changes
+    observeEvent(current_svy_type(), {
+
+      ind_tab <- svy_ind_tab()
+      group_choices <- sort(unique(ind_tab$Topic), decreasing = F)
+
+      ### clear the selected indicator if not available for this survey type
+      selected_ind <- current_svy_ind_selection()
+      if (!is.null(selected_ind) && selected_ind != '' && !selected_ind %in% ind_tab$ID) {
+
+        showNotification(
+          paste0("'", surveyPrev_ind_list[surveyPrev_ind_list$ID == selected_ind, ]$Description,
+                 "' is not available for the ", CountryInfo$svy_label(),
+                 " survey. Please choose another indicator."),
+          type = "warning", duration = 8)
+
+        selected_ind <- ''
+        current_svy_ind_selection('')
+        CountryInfo$svy_indicator_var(NULL)
+        CountryInfo$svy_indicator_des(NULL)
+      }
+
+      selected_group <- current_svy_ind_group_selection()
+
+      if (is.null(selected_group) || !selected_group %in% group_choices) {
+        ### the group is not available: update choices and let the
+        ### Svy_ind_group observer refresh the indicator menu
+        updateSelectInput(session, "Svy_ind_group", choices = group_choices)
+      } else {
+        ### the group is still available: refresh its indicator menu
+        updateSelectInput(session, "Svy_ind_group", choices = group_choices,
+                          selected = selected_group)
+
+        group_ind_list <- ind_tab %>%
+          subset( Topic==selected_group)
+
+        indicator_choices_vector <- stats::setNames(group_ind_list$ID, group_ind_list$Description)
+        ind_choice_vec(indicator_choices_vector)
+
+        shinyWidgets::updatePickerInput(session,
+                                        inputId = "Svy_indicator",
+                                        choices = sort(indicator_choices_vector,decreasing = F),
+                                        selected = if (selected_ind == '') character(0) else selected_ind,
+                                        options = list(`liveSearch` = TRUE))
+      }
+
+    }, ignoreInit = TRUE)
+
+
     ### preload Zambia
     observeEvent(CountryInfo$use_preloaded_Zambia(),{
 
@@ -540,7 +606,7 @@ mod_country_specify_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,pare
           text = HTML(paste0("<p> Are you sure you want to switch to another country/survey? <br><br>",
                              "Uploaded data, fitted models and results for <br>",
                              "<div style='background-color: #D0E4F7; padding: 10px; font-size: large;margin-top:15px;margin-bottom:15px;'>",
-                             "<strong> DHS ",CountryInfo$svyYear_selected(),' survey in ',CountryInfo$country(),"</strong> <br>",
+                             "<strong> ",CountryInfo$svy_label(),' survey in ',CountryInfo$country(),"</strong> <br>",
                              "</div>",
                              "will all be ",
                              "<strong> <font color='red'> deleted</strong> </font>.</p>")),
@@ -569,7 +635,7 @@ mod_country_specify_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,pare
         CountryInfo$svyYear_selected('')
 
         CountryInfo$svyYear_list(get_survey_year(input$country))
-        updateSelectInput(inputId = "Svy_year", choices = c('',sort(CountryInfo$svyYear_list(),decreasing = T)))
+        updateSelectInput(inputId = "Svy_year", choices = c('',survey_year_choices(CountryInfo$country(), CountryInfo$svyYear_list(), DHS.survey.meta)))
 
 
 
@@ -617,7 +683,7 @@ mod_country_specify_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,pare
         ### Update country info
         CountryInfo$svyYear_list(get_survey_year(input$country))
         CountryInfo$svyYear_selected('')
-        updateSelectInput(inputId = "Svy_year", choices = c('',sort(CountryInfo$svyYear_list(),decreasing = T)))
+        updateSelectInput(inputId = "Svy_year", choices = c('',survey_year_choices(CountryInfo$country(), CountryInfo$svyYear_list(), DHS.survey.meta)))
 
 
       } else {
@@ -652,7 +718,7 @@ mod_country_specify_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,pare
           text = HTML(paste0("<p> Are you sure you want to switch to another country/survey? <br><br>",
                              "Uploaded data, fitted models and results for <br>",
                              "<div style='background-color: #D0E4F7; padding: 10px; font-size: large;margin-top:15px;margin-bottom:15px;'>",
-                             "<strong> DHS ",CountryInfo$svyYear_selected(),' survey in ',CountryInfo$country(),"</strong> <br>",
+                             "<strong> ",CountryInfo$svy_label(),' survey in ',CountryInfo$country(),"</strong> <br>",
                              "</div>",
                              "will all be ",
                              "<strong> <font color='red'> deleted</strong> </font>.</p>")),
@@ -723,7 +789,7 @@ mod_country_specify_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,pare
 
         message(paste0('changed to survey ',CountryInfo$svyYear_selected()))
 
-        updateSelectInput(inputId = "Svy_year", choices = c('',sort(CountryInfo$svyYear_list(),decreasing = T)),
+        updateSelectInput(inputId = "Svy_year", choices = c('',survey_year_choices(CountryInfo$country(), CountryInfo$svyYear_list(), DHS.survey.meta)),
                           selected=CountryInfo$svyYear_selected())
 
         ### get shapefiles
@@ -756,7 +822,7 @@ mod_country_specify_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,pare
 
       } else {
         # User did not confirm, reset the selectInput to the last valid value
-        updateSelectInput(inputId = "Svy_year", choices = c('',sort(CountryInfo$svyYear_list(),decreasing = T)),
+        updateSelectInput(inputId = "Svy_year", choices = c('',survey_year_choices(CountryInfo$country(), CountryInfo$svyYear_list(), DHS.survey.meta)),
                           selected=CountryInfo$svyYear_selected())
       }
     })
@@ -799,7 +865,7 @@ mod_country_specify_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,pare
 
         current_svy_ind_group_selection(input$Svy_ind_group)  # Update the valid selection to the new value
 
-        group_ind_list <- ref_tab_all %>%
+        group_ind_list <- svy_ind_tab() %>%
           subset( Topic==input$Svy_ind_group)
 
         indicator_choices_vector <- stats::setNames(group_ind_list$ID, group_ind_list$Description)
@@ -823,13 +889,13 @@ mod_country_specify_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,pare
         current_svy_ind_group_selection(input$Svy_ind_group)  # Update the valid selection to the new value
         message(paste0('changed to ',current_svy_ind_group_selection()))
         updateSelectInput(session, "Svy_ind_group", selected = current_svy_ind_group_selection(),
-                          choices =sort(unique(ref_tab_all$Topic),decreasing = F))
+                          choices =sort(unique(svy_ind_tab()$Topic),decreasing = F))
 
         AnalysisInfo$reset_results()
         CountryInfo$reset_dat()
 
 
-        group_ind_list <- ref_tab_all %>%
+        group_ind_list <- svy_ind_tab() %>%
           subset( Topic==input$Svy_ind_group)
 
         indicator_choices_vector <- stats::setNames(group_ind_list$ID, group_ind_list$Description)
@@ -844,7 +910,7 @@ mod_country_specify_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,pare
       } else {
         # User did not confirm, reset the selectInput to the last valid value
         updateSelectInput(session, "Svy_ind_group", selected = current_svy_ind_group_selection(),
-                          choices =sort(unique(ref_tab_all$Topic),decreasing = F))
+                          choices =sort(unique(svy_ind_tab()$Topic),decreasing = F))
       }
     })
 
@@ -1013,8 +1079,9 @@ mod_country_specify_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo,pare
         "<p style='font-size: large;'>",
         "You've selected ",
         "<strong style='background-color: #D0E4F7;'>", country, "</strong>",
-        " with survey in ",
-        "<strong style='background-color: #D0E4F7;'>", svy_year, "</strong>",
+        " with the ",
+        "<strong style='background-color: #D0E4F7;'>", CountryInfo$svy_label(), "</strong>",
+        " survey",
         ", to estimate ",
         "<br> <strong style='background-color: #D0E4F7;'>", CountryInfo$svy_indicator_des(), "</strong>",
         " (see detailed definition ",

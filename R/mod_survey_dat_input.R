@@ -52,7 +52,7 @@ mod_survey_dat_input_ui <- function(id){
                            div(style = "margin: auto;float: left;width: min(100%,400px);",
                                fileInput(ns("Svy_dataFile"),
                                          accept='.zip',
-                                         with_red_star("Upload DHS survey data (.zip)")),
+                                         with_red_star("Upload DHS/MIS survey data (.zip)")),
                                
                                #actionButton(ns("upload_Svy_Data"), "Submit Survey Data"),
                                uiOutput(ns("data_button"))
@@ -192,7 +192,7 @@ mod_survey_dat_input_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
         
         return.text <- HTML(paste0(
           "<p style='font-size: large;'>",
-          "<strong> DHS ", svy_year, "</strong> survey ",
+          "<strong> ", CountryInfo$svy_label(), "</strong> survey ",
           "in <strong>", country,"</strong> <br>",
           "  <font color='red'>does not support estimation </font> for",
           "<span style='background-color: #D0E4F7;'>",
@@ -224,7 +224,7 @@ mod_survey_dat_input_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
             "<span style='background-color: #D0E4F7;'>",
             "<br><strong>", CountryInfo$svy_indicator_des(), "</strong>, ",
             "</span><br> in <strong>", country,
-            "</strong> using the <strong>DHS ", svy_year, "</strong> survey, ",
+            "</strong> using the <strong>", CountryInfo$svy_label(), "</strong> survey, ",
             "<br> the following recode(s) are required for the analysis: ",
             "<span style='background-color: #D0E4F7;'>",
             "<strong>", concatenate_vector_with_and(recode_for_display), "</strong></span>.",
@@ -238,7 +238,7 @@ mod_survey_dat_input_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
           "<span style='background-color: #D0E4F7;'>",
           "<br> <strong>",CountryInfo$svy_indicator_des(), "</strong>, ",
           "</span> <br> in <strong>", country,
-          "</strong> with <strong> DHS ", svy_year, "</strong> survey ",
+          "</strong> with <strong> ", CountryInfo$svy_label(), "</strong> survey ",
           "<br> Please upload your data in ",
           "<span style='background-color: #D0E4F7;'>",
           "<strong>",concatenate_vector_with_and(recode_for_display), "</strong> </span>.",

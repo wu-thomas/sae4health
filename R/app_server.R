@@ -23,6 +23,9 @@ app_server <- function(input, output, session) {
   MetaInfo <- MetaInfo$new()
   #populate MetaInfo
   load_meta_data(MetaInfo)
+
+  ### survey meta data, used to look up the survey type (DHS/MIS) of the selected survey
+  CountryInfo$svy_meta(isolate(MetaInfo$DHS.survey.meta()))
   
   ### home page for the website
   CountryInfo$website_link('https://sae4health.stat.uw.edu')

@@ -95,11 +95,29 @@ if(FALSE){
   ##################################################
   ### Determine the surveys eligible for analysis
   ##################################################
-  ### criteria: conducted later than 2000; is DHS standard survey (not MIS etc.); contains GPS data
+  ### criteria: conducted later than 2000; is DHS standard survey, or a non-DHS survey
+  ###           (e.g. MIS) listed in supported_other_surveys; contains GPS data
 
-  ### subset to >2000 and standard DHS
+  ### non-DHS surveys supported by the app, by DHS SurveyId (add more here once
+  ### their data are on the server). The app identifies surveys by country + year,
+  ### so a survey in the same country and year as a DHS is dropped below.
+  supported_other_surveys <- c('KE2020MIS')
+
+  ### subset to >2000 and standard DHS (plus supported other surveys)
   DHS.survey.listing <- rdhs::dhs_surveys()
-  DHS.survey.listing <- DHS.survey.listing[as.numeric(DHS.survey.listing$SurveyYear)>2000 & DHS.survey.listing$SurveyType== 'DHS',]
+  DHS.survey.listing <- DHS.survey.listing[as.numeric(DHS.survey.listing$SurveyYear)>2000 &
+                                             (DHS.survey.listing$SurveyType== 'DHS' |
+                                                DHS.survey.listing$SurveyId %in% supported_other_surveys),]
+
+  ### drop non-DHS surveys sharing country + year with a DHS (cannot be told apart in the app)
+  DHS.country.year <- paste0(DHS.survey.listing$DHS_CountryCode, '_', DHS.survey.listing$SurveyYear)
+  svy.year.conflict <- DHS.survey.listing$SurveyType != 'DHS' &
+    DHS.country.year %in% DHS.country.year[DHS.survey.listing$SurveyType == 'DHS']
+  if(any(svy.year.conflict)){
+    message('Dropping surveys in the same country and year as a DHS: ',
+            paste(DHS.survey.listing$SurveyId[svy.year.conflict], collapse = ', '))
+    DHS.survey.listing <- DHS.survey.listing[!svy.year.conflict,]
+  }
 
   ### check GPS data set availability
   check_GPS_avail <- function(surveyID){
@@ -142,7 +160,7 @@ if(FALSE){
   DHS.dataset.meta[DHS.dataset.meta$CountryName=='Congo Democratic Republic',]$CountryName <-'Democratic Republic of the Congo'
   
   DHS.survey.meta <- DHS.survey.meta %>%
-    filter(SurveyType == "DHS") %>%
+    filter(SurveyType == "DHS" | SurveyId %in% supported_other_surveys) %>%
     filter(as.integer(SurveyYear) > 1999)
   formatted_date <- format(Sys.Date(), "%m%d%Y")
 
@@ -967,7 +985,8 @@ if(FALSE){
 if(FALSE){
   #dhs_survey_list <- rdhs::dhs_surveys()
   dhs_survey_list <- DHS.survey.meta
-  dhs_survey_list <- dhs_survey_list[dhs_survey_list$SurveyYear>2000 & dhs_survey_list$SurveyType== 'DHS',]
+  ### DHS.survey.meta already contains only DHS and supported other surveys (e.g. KE2020MIS)
+  dhs_survey_list <- dhs_survey_list[dhs_survey_list$SurveyYear>2000 & dhs_survey_list$SurveyType %in% c('DHS','MIS'),]
 
   res_ind_supported <- data.frame()
 
@@ -1005,11 +1024,14 @@ if(FALSE){
   }
 
 
-  DHS_api_est <- res_ind_supported[,c('IndicatorId','Indicator','Value','DHS_CountryCode',
-                                      'CountryName','SurveyYear','ByVariableLabel')]
+  ### API queries are by country + year; keep only estimates from surveys in the app
+  res_ind_supported <- res_ind_supported[res_ind_supported$SurveyId %in% dhs_survey_list$SurveyId,]
 
-  colnames(DHS_api_est) <- c('DHS Standard ID','Definition','Estimate','Country Code','Country','Survey Year','By Variable Label')
-  DHS_api_est <- DHS_api_est[,c('Country','Country Code','Survey Year','DHS Standard ID','Definition','Estimate','By Variable Label')]
+  DHS_api_est <- res_ind_supported[,c('IndicatorId','Indicator','Value','DHS_CountryCode',
+                                      'CountryName','SurveyYear','SurveyType','ByVariableLabel')]
+
+  colnames(DHS_api_est) <- c('DHS Standard ID','Definition','Estimate','Country Code','Country','Survey Year','Survey Type','By Variable Label')
+  DHS_api_est <- DHS_api_est[,c('Country','Country Code','Survey Year','Survey Type','DHS Standard ID','Definition','Estimate','By Variable Label')]
   save(DHS_api_est,file='data/new/DHS_api_est.rda')
 
 

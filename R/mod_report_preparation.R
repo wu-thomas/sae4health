@@ -203,22 +203,22 @@ mod_report_preparation_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
                                      fr = " avec les ",
                                      es = " con los ",
                                      pt = " com os "),
-      consistency_dhs_bold    = list(en = "DHS final reports",
-                                     fr = "rapports finaux DHS",
-                                     es = "informes finales DHS",
-                                     pt = "relatórios finais DHS"),
+      consistency_dhs_bold    = list(en = "{SVY} final reports",
+                                     fr = "rapports finaux {SVY}",
+                                     es = "informes finales {SVY}",
+                                     pt = "relatórios finais {SVY}"),
       natl_est_app            = list(en = "National estimate (from the app): ",
                                      fr = "Estimation nationale (à partir de l'application) : ",
                                      es = "Estimación nacional (de la aplicación): ",
                                      pt = "Estimativa nacional (do aplicativo): "),
-      natl_est_dhs_unavail    = list(en = "Estimate from the DHS report is not available through DHS API. Please manually check for consistency. ",
-                                     fr = "L'estimation du rapport DHS n'est pas disponible via l'API DHS. Veuillez vérifier manuellement la cohérence. ",
-                                     es = "La estimación del informe DHS no está disponible a través de la API de DHS. Por favor, verifique manualmente la coherencia. ",
-                                     pt = "A estimativa do relatório DHS não está disponível pela API do DHS. Por favor, verifique manualmente a consistência. "),
-      natl_est_dhs            = list(en = "National estimate (from DHS Final Report): ",
-                                     fr = "Estimation nationale (à partir du rapport final DHS) : ",
-                                     es = "Estimación nacional (del informe final DHS): ",
-                                     pt = "Estimativa nacional (do relatório final DHS): "),
+      natl_est_dhs_unavail    = list(en = "Estimate from the {SVY} report is not available through DHS API. Please manually check for consistency. ",
+                                     fr = "L'estimation du rapport {SVY} n'est pas disponible via l'API DHS. Veuillez vérifier manuellement la cohérence. ",
+                                     es = "La estimación del informe {SVY} no está disponible a través de la API de DHS. Por favor, verifique manualmente la coherencia. ",
+                                     pt = "A estimativa do relatório {SVY} não está disponível pela API do DHS. Por favor, verifique manualmente a consistência. "),
+      natl_est_dhs            = list(en = "National estimate (from {SVY} Final Report): ",
+                                     fr = "Estimation nationale (à partir du rapport final {SVY}) : ",
+                                     es = "Estimación nacional (del informe final {SVY}): ",
+                                     pt = "Estimativa nacional (do relatório final {SVY}): "),
       per_1000                = list(en = " per 1000 individuals",
                                      fr = " pour 1000 individus",
                                      es = " por cada 1000 personas",
@@ -692,7 +692,11 @@ mod_report_preparation_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
       if (is.null(entry)) return(key) # fallback: the key itself
       val <- entry[[lang]]
       if (is.null(val) || is.na(val) || val == "") {
-        return(entry[["en"]])           # fallback to English
+        val <- entry[["en"]]            # fallback to English
+      }
+      ### fill in the survey type (DHS/MIS) where a string refers to the survey's report
+      if (grepl("{SVY}", val, fixed = TRUE)) {
+        val <- gsub("{SVY}", isolate(CountryInfo$svy_type()), val, fixed = TRUE)
       }
       val
     }
@@ -1841,7 +1845,8 @@ mod_report_preparation_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
       HTML(paste0(
         "<p style='font-size: large;'>",
         tr("ui_selected_country", lang), ": <span style='font-weight:bold;background-color: #D0E4F7;'>", country, "</span>.",
-        " ", tr("ui_survey_year", lang), ": <span style='font-weight:bold;background-color: #D0E4F7;'>", svy_year, "</span>.",
+        " ", tr("ui_survey_year", lang), ": <span style='font-weight:bold;background-color: #D0E4F7;'>", svy_year,
+        " (", CountryInfo$svy_type(), ")</span>.",
         "<br>",
         tr("ui_indicator", lang), ": <span style='font-weight:bold;background-color: #D0E4F7;'>", CountryInfo$svy_indicator_des(),
         "</span>.</p>",
@@ -2002,7 +2007,7 @@ mod_report_preparation_server <- function(id,CountryInfo,AnalysisInfo,MetaInfo){
                       x = 0.05, y = 0.85, just = "left", gp = gpar(fontsize = 12))
 
             grid.text(bquote(paste(.(tr("survey_label", lang)),
-                                   bold(.(as.character(CountryInfo$svyYear_selected()))))),
+                                   bold(.(as.character(CountryInfo$svy_label()))))),
                       x = 0.05, y = 0.8, just = "left", gp = gpar(fontsize = 12))
 
             grid.text(bquote(paste(.(tr("indicator_label", lang)),
